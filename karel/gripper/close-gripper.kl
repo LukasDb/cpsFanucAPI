@@ -1,7 +1,0 @@
-PROGRAM close_gripper
-
-%INCLUDE gripper-utils
-
-BEGIN
-	closeGripper
-END close_gripper
