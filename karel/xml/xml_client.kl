@@ -1,0 +1,87 @@
+PROGRAM xml_client
+
+	%INCLUDE ../types
+	%INCLUDE klerxmlf
+
+
+CONST
+	-- mandatory global declarations
+	PROGRAM_NAME = 'xml_client'
+	pipe_path = 'PIP:pipe.dt'
+	BUFFER_NAME = 'bufferStruct' -- global ID of var below
+
+VAR
+	bufferStruct: struct_t -- buffer for xml_scan, that needs static variable name as parameter
+	-- mandatory global declarations
+	LOG: FILE
+	STATUS: INTEGER
+
+	socketFile: FILE
+	pipeFile: FILE
+	timeLog: FILE
+	structs: ARRAY [16] OF struct_t
+	i: INTEGER
+	j: INTEGER
+	n: INTEGER
+	timeRTT: INTEGER
+	timeXML: INTEGER
+	k: INTEGER
+
+%INCLUDE ../util/log_util
+%INCLUDE ../util/socket_util
+%INCLUDE ../util/file_util
+%INCLUDE ../util/stopwatch_util
+--%INCLUDE ../console/print_utils
+--%INCLUDE ../socket/socket_utils
+
+
+%INCLUDE varlist_parser
+
+BEGIN
+initLog('MC:log.txt')
+logText('Client BEGIN')
+
+--connectServ('C3:')
+-- socketFile is now initialized & opened
+
+OPEN FILE timeLog('RW', 'MC:timeLog.txt')
+
+k = 10
+FOR j = 1 TO k DO
+
+	startTime(timeRTT)
+	connectToServer('C3:', socketFile)
+	logText('Connection established')
+	-- write and flush
+	WRITE socketFile('GET /xml_endpoint', CR, CR)
+	
+	OPEN FILE pipeFile('RW', pipe_path)
+	STATUS = IO_STATUS(pipeFile)
+	catchError('Could not open pipe file', STATUS)
+	 
+	awaitSocket(socketFile, 1) -- active polling
+	logText('Received socket message')
+	
+	fileCopy(socketFile, pipeFile) -- socket -> pipe
+	logText('Copied msg to pipeFile')
+	
+	CLOSE FILE pipeFile -- needs to be reopened (as RO) to be interpreted as xml
+	WRITE timeLog('RTT:', stopTime(timeRTT), CR)
+	
+	startTime(timeXML)
+	n = parse_varlist(pipeFile, pipe_path, bufferStruct, structs, 16)
+	WRITE timeLog('XML Parse:',  stopTime(timeXML), CR)
+	
+ENDFOR
+	
+FOR i = 1 TO n DO
+	WRITE log('Struct ', i, CR)
+	WRITE log('	int_val:', structs[i].int_val, CR)
+	WRITE log('	float_val:', structs[i].float_val, CR)
+	WRITE log('	string_val:', structs[i].string_val, CR)
+ENDFOR
+
+
+CLOSE FILE timeLog
+logText('Client END')
+END xml_client

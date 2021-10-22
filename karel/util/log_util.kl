@@ -1,0 +1,33 @@
+-- log error to file but continue execution
+-- REQUIRES variable 'LOG' to be declared & initialized
+ROUTINE logError(description : STRING; STATUS : INTEGER)
+BEGIN
+    IF STATUS <> 0 THEN
+        WRITE LOG ('ERROR: ',  description, '; STATUS: ', STATUS, CR)
+    ENDIF
+END logError
+
+-- terminate programm after logging error
+ROUTINE catchError(description : STRING; STATUS : INTEGER)
+BEGIN
+    IF STATUS <> 0 THEN
+        WRITE LOG ('ERROR: ',  description, '; STATUS: ', STATUS, CR)
+        ABORT --terminate
+    ENDIF
+END catchError
+
+-- REQUIRES variable 'LOG' to be declared
+ROUTINE initLog(filePath: STRING)
+BEGIN
+OPEN FILE LOG ('RW', filePath)
+IF IO_STATUS(LOG) <> 0 THEN
+    WRITE('ERROR: Could not open LOG file ; STATUS: ', IO_STATUS(LOG), CR) --write to console
+	ABORT
+ENDIF
+END initLOG
+
+-- shorthand to write arbitrary text to logfile
+ROUTINE logText(text: STRING)
+BEGIN
+WRITE LOG(text, CR)
+END logText
