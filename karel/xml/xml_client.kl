@@ -9,15 +9,20 @@ CONST
 	PROGRAM_NAME = 'xml_client'
 	pipe_path = 'PIP:pipe.dt'
 	BUFFER_NAME = 'bufferStruct' -- global ID of var below
+	CONNECTION_TAG = 'C3:'
 
 VAR
 	bufferStruct: struct_t -- buffer for xml_scan, that needs static variable name as parameter
 	-- mandatory global declarations
-	LOG: FILE
 	STATUS: INTEGER
 
+	--file declarations must be global, declare socket file for REST calls here
 	socketFile: FILE
+	
+	--output file for REST calls
 	pipeFile: FILE
+	
+	log: FILE
 	timeLog: FILE
 	structs: ARRAY [16] OF struct_t
 	i: INTEGER
@@ -27,12 +32,16 @@ VAR
 	timeXML: INTEGER
 	k: INTEGER
 
+--standalone imports
 %INCLUDE ../util/log_util
+
+-- requires log_util
 %INCLUDE ../util/socket_util
 %INCLUDE ../util/file_util
 %INCLUDE ../util/stopwatch_util
---%INCLUDE ../console/print_utils
---%INCLUDE ../socket/socket_utils
+
+-- requires socket_util, file_util
+%INCLUDE ../util/rest_util
 
 
 %INCLUDE varlist_parser
@@ -40,36 +49,22 @@ VAR
 BEGIN
 initLog('MC:log.txt')
 logText('Client BEGIN')
-
---connectServ('C3:')
--- socketFile is now initialized & opened
+disconnectFromServer(CONNECTION_TAG, socketFile) -- if previous execution was faulty
 
 OPEN FILE timeLog('RW', 'MC:timeLog.txt')
 
-k = 10
-FOR j = 1 TO k DO
+FOR j = 1 TO 10 DO
 
 	startTime(timeRTT)
-	connectToServer('C3:', socketFile)
-	logText('Connection established')
-	-- write and flush
-	WRITE socketFile('GET /xml_endpoint', CR, CR)
+		
+	makeRESTCall('GET /xml_endpoint',CONNECTION_TAG, socketFile, pipeFile, pipe_path)
 	
-	OPEN FILE pipeFile('RW', pipe_path)
-	STATUS = IO_STATUS(pipeFile)
-	catchError('Could not open pipe file', STATUS)
-	 
-	awaitSocket(socketFile, 1) -- active polling
-	logText('Received socket message')
-	
-	fileCopy(socketFile, pipeFile) -- socket -> pipe
-	logText('Copied msg to pipeFile')
-	
-	CLOSE FILE pipeFile -- needs to be reopened (as RO) to be interpreted as xml
 	WRITE timeLog('RTT:', stopTime(timeRTT), CR)
 	
 	startTime(timeXML)
+	
 	n = parse_varlist(pipeFile, pipe_path, bufferStruct, structs, 16)
+	
 	WRITE timeLog('XML Parse:',  stopTime(timeXML), CR)
 	
 ENDFOR

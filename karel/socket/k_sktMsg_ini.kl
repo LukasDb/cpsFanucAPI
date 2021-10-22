@@ -24,9 +24,9 @@ BEGIN
 	
 	-- Port Computer Server is listening to
 	--portString = '65531'
-	portString = '8000'
+	portString = '5000'
 	-- Robot Communication Hub uses 65531
-	portInteger = 8000
+	portInteger = 5000
 	
 	-- System variable for Client Settings
 	server  = '$HOSTC_CFG[3]'

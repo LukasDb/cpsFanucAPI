@@ -1,17 +1,21 @@
-ROUTINE connectToServer(serverTag : STRING; socketFile: FILE)
+ROUTINE connectToServer(connectionTag : STRING; socketFile: FILE)
 BEGIN
-	CLOSE FILE socketFile
-	MSG_DISCO(serverTag, STATUS) -- can fail if no current connection
-	MSG_CONNECT(serverTag, STATUS)
+	MSG_CONNECT(connectionTag, STATUS)
 	catchError('Connecting to Server', STATUS)
 
-
-
-	OPEN FILE socketFile('RW', serverTag)
+	OPEN FILE socketFile('RW', connectionTag)
 	STATUS = IO_STATUS(socketFile)
-
 	catchError('Could not open socket file', STATUS)
+	
 END connectToServer
+
+ROUTINE disconnectFromServer(connectionTag : STRING; socketFile: FILE)
+BEGIN
+	CLOSE FILE socketFile --close file first, otherwise msg_disco will abort
+	MSG_DISCO(connectionTag, STATUS) -- can fail if no current connection, don't catch error
+	
+END disconnectFromServer
+
 
 ROUTINE awaitSocket(socketFile: FILE; pollrate: INTEGER)
 VAR
@@ -21,6 +25,7 @@ BEGIN
 REPEAT
 	BYTES_AHEAD(socketFile, nBytes, STATUS)
 	catchError('Failed to scan socket', STATUS)
-	DELAY pollrate -- wait for x  ms
+	DELAY pollrate -- sleep for x  ms
 UNTIL nBytes > 0
+
 END awaitSocket

@@ -1,0 +1,12 @@
+ROUTINE makeRESTCall(callString: STRING; serverTag : STRING; socketFile: FILE; outputFile: FILE; outputPath: STRING)
+BEGIN
+	connectToServer(serverTag, socketFile) -- establish connection
+	WRITE socketFile(callString, CR, CR) -- write and flush
+	OPEN FILE outputFile('RW', outputPath)
+	catchError('Could not open pipe file', STATUS)
+	
+	awaitSocket(socketFile, 1) -- active polling
+	fileCopy(socketFile, outputFile) -- socketFile -> outputFile
+	disconnectFromServer(serverTag, socketFile) -- cut connection
+	CLOSE FILE pipeFile -- close file so it can be reopened with proper modifiers by consumers
+END makeRESTCall
