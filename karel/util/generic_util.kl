@@ -1,0 +1,19 @@
+ROUTINE CNV_BOOL_STR(x: BOOLEAN): STRING
+BEGIN
+	-- serialize booleans as c-like integers (can be casted in most languages)
+	IF(x) THEN
+		RETURN ('1')
+	ELSE
+		RETURN ('0')
+	ENDIF
+END CNV_BOOL_STR
+
+ROUTINE CNV_STR_BOOL(x: STRING): BOOLEAN
+BEGIN
+	IF(STR_LEN(x) == 1 AND x == '1') THEN
+		RETURN TRUE
+	ELSE
+		-- all invalid input strings are treated as false
+		RETURN FALSE
+	ENDIF
+END CNV_STR_BOOL
