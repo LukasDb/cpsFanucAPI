@@ -1,0 +1,56 @@
+PROGRAM CONFIGURE_SOCKET
+
+%NOLOCKGROUP
+%NOBUSYLAMP
+
+%INCLUDE klevkeys
+
+VAR 
+	portString  : STRING[5]
+	portInteger : INTEGER
+	
+	server		: STRING[32]
+	ip			: STRING[48]
+	protocol	: STRING[8]
+	statusDef 	: INTEGER
+
+	entry 		: INTEGER
+	STATUS	    : INTEGER
+
+BEGIN
+	-- Server IP that robot willl connect to as client
+	ip = '127.0.0.1'
+	
+	-- Server Port
+	portString = '5000'
+	portInteger = 5000
+	
+	-- Use C3 Tag for this socket communication
+	server  = '$HOSTC_CFG[3]'
+	
+	WRITE TPDISPLAY(CHR(128))
+
+	-- Set IP
+	SET_VAR(entry, '*SYSTEM*', server + '.$STRT_REMOTE', ip, STATUS)
+	
+	SET_VAR(entry, '*SYSTEM*', server + '.$STATE', 1, STATUS)
+	SET_VAR(entry, '*SYSTEM*', server + '.$OPER', 3, STATUS)
+		
+	-- Set Port
+	SET_VAR(entry, '*SYSTEM*', server + '.$PORT' , portString, STATUS)
+	SET_VAR(entry, '*SYSTEM*', server + '.$SERVER_PORT' , portInteger, STATUS)
+	
+	-- Set Protocol -> Socket Messaging
+	protocol = 'SM'
+	SET_VAR(entry, '*SYSTEM*', server + '.$PROTOCOL', protocol, STATUS)	
+		
+	-- Set Server Status -> DEFINED	
+	statusDef = 2
+	SET_VAR(entry, '*SYSTEM*', server + '.$STATE', statusDef, STATUS)
+	
+	--To apply changes reboot the robot in COLD start
+	
+	
+    WRITE TPDISPLAY('DONE!',CR)
+
+END CONFIGURE_SOCKET

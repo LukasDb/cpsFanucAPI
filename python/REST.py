@@ -1,4 +1,6 @@
 # Webserver
+import time
+
 from flask import Flask, Response
 from flask_restx import Resource, Api, reqparse
 import xml.etree.ElementTree as ET
@@ -13,8 +15,9 @@ PP_KEY = "pp"
 PO_LIST_KEY = "obj_list"
 PP_LIST_KEY = "pp_list"
 
-PO_QUALITY_KEY = "dist"
+PO_QUALITY_KEY = "dist_2d"
 PP_QUALITY_KEY = "rot_diff"
+
 
 class PickingObject:
     def __init__(self, position_2d, quality):
@@ -50,6 +53,7 @@ class PickingPoint:
                   }
         ET.SubElement(parent, PP_KEY, params)
 
+
 def serialize_picking_objects_xml(picking_objects: [PickingObject]):
     root = ET.Element(PO_LIST_KEY)
     for po in picking_objects:
@@ -63,16 +67,17 @@ def serialize_picking_points_xml(picking_points: [PickingPoint]):
         pp.add_to_xml(root)
     return ET.tostring(root, encoding="ascii", method="xml")
 
+
 def degree_delta(alpha, beta):
     delta = abs(alpha - beta)
-    return (delta if delta < 180 else 360 - delta)
+    return delta if delta < 180 else 360 - delta
 
 
 def rotation_delta(current, target):
     total_delta = 0
 
     # check if same dimensions
-    if (len(current) != len(target)):
+    if len(current) != len(target):
         # add all angle differences
         for i in current:
             total_delta += degree_delta(current[i], target[i])
@@ -87,6 +92,7 @@ class XMLEndpoint(Resource):
         parser.add_argument('relative', type=bool)
         args = parser.parse_args()
 
+        #time.sleep(0.2)
         # Build response with flask function, default http code is 200 (OK)
         # response = make_response({"text": text})
         # Add header so Angular doesnt complain
