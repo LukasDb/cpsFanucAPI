@@ -7,14 +7,15 @@ PROGRAM xml_client
 CONST
 	-- mandatory global declarations
 	PROGRAM_NAME = 'xml_client'
-	pipe_path = 'PIP:pipe.dt'
 	BUFFER_NAME = 'bufferStruct' -- global ID of var below
+	pipe_path = 'PIP:pipe.dt'
 	CONNECTION_TAG = 'C3:'
 	
 	relativePos = FALSE
 
 VAR
-	bufferStruct: struct_t -- buffer for xml_scan, that needs static variable name as parameter
+	bufferStruct: picking_point_t -- buffer for xml_scan, that needs static variable name as parameter
+	structs: ARRAY [16] OF picking_point_t
 	-- mandatory global declarations
 	STATUS: INTEGER
 
@@ -26,7 +27,6 @@ VAR
 	
 	log: FILE
 	timeLog: FILE
-	structs: ARRAY [16] OF struct_t
 	i: INTEGER
 	j: INTEGER
 	n: INTEGER
@@ -50,6 +50,8 @@ VAR
 
 
 %INCLUDE varlist_parser
+%INCLUDE obj_list_parser
+%INCLUDE pp_list_parser
 
 BEGIN
 initLog('MC:log.txt')
@@ -62,24 +64,33 @@ FOR j = 1 TO 10 DO
 
 	startTime(timeRTT)
 	
-	query = 'GET /xml_endpoint?relative='+CNV_BOOL_STR(relativePos)
+	--query = 'GET /xml_endpoint?relative='+CNV_BOOL_STR(relativePos)
+	query = 'GET /picking-points'
 	makeRESTCall(query,CONNECTION_TAG, socketFile, pipeFile, pipe_path)
 	
 	WRITE timeLog('RTT:', stopTime(timeRTT), CR)
 	
 	startTime(timeXML)
 	
-	n = parse_varlist(pipeFile, pipe_path, bufferStruct, structs, 16)
-	
+	--n = parse_varlist(pipeFile, pipe_path, bufferStruct, structs)
+	--n = parse_obj_list(pipeFile, pipe_path, bufferStruct, BUFFER_NAME, PROGRAM_NAME, structs)
+	n = parse_pp_list(pipeFile, pipe_path, bufferStruct, BUFFER_NAME, PROGRAM_NAME, structs)
 	WRITE timeLog('XML Parse:',  stopTime(timeXML), CR)
 	
 ENDFOR
 	
 FOR i = 1 TO n DO
-	WRITE log('Struct ', i, CR)
-	WRITE log('	int_val:', structs[i].int_val, CR)
-	WRITE log('	float_val:', structs[i].float_val, CR)
-	WRITE log('	string_val:', structs[i].string_val, CR)
+	-- WRITE log('Struct ', i, CR)
+	-- WRITE log('	x:', structs[i].x, CR)
+	-- WRITE log('	y:', structs[i].y, CR)
+	-- WRITE log('	dist_2d:', structs[i].dist_2d, CR)
+	WRITE log('    x:', structs[i].x, CR)
+	WRITE log('    y:', structs[i].y, CR)
+	WRITE log('    z:', structs[i].z, CR)
+	WRITE log('    w:', structs[i].w, CR)
+	WRITE log('    p:', structs[i].p, CR)
+	WRITE log('    r:', structs[i].r, CR)
+	WRITE log('    rot_diff:', structs[i].rot_diff, CR)
 ENDFOR
 
 

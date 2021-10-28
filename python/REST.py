@@ -99,7 +99,7 @@ class XMLEndpoint(Resource):
         # response.headers.add("Access-Control-Allow-Origin", "*")
         # return response
         root = ET.Element('list_tag')
-        for i in range(15):
+        for i in range(10):
             x = ET.SubElement(root, 'struct_tag', {'int_val': str(i), 'float_val': str(-3.5 + i),
                                                    'string_val': "abc" if i % 2 == 0 else "def"})
 
@@ -109,7 +109,7 @@ class XMLEndpoint(Resource):
 # --------------------------------------------------------------------------
 
 @api.route('/objects')
-class XMLEndpoint(Resource):
+class ObjectsEndpoint(Resource):
     def get(self):
         # Parse arguments
         parser = reqparse.RequestParser()
@@ -124,7 +124,7 @@ class XMLEndpoint(Resource):
 # --------------------------------------------------------------------------
 
 @api.route('/picking-points')
-class XMLEndpoint(Resource):
+class PickingPointsEndpoint(Resource):
     def get(self):
         # Parse arguments
         parser = reqparse.RequestParser()

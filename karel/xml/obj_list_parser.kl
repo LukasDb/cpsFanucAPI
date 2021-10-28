@@ -1,41 +1,63 @@
-ROUTINE  parse_varlist(xml_file: FILE; xmlPath: STRING; bufferStruct: struct_t; structArray: ARRAY[*] OF struct_t) : INTEGER
+-- Parameter Description:
+
+-- xml_file: FILE								... File Variable
+--  xml_path: STRING							... File path, needed to open file
+-- entry_buffer: picking_object_t				... Global buffer variable, needed for XML_SCAN routine
+-- buffer_name: STRING						... Name of global buffer variable in main program,  needed for XML_SCAN routine
+-- prog_name: STRING						... Name of main program,  needed for XML_SCAN routine
+-- entry_array: ARRAY[*] OF picking_object_t	... Target array to parse file content into
+
+ROUTINE  parse_obj_list(
+xml_file: FILE;
+ xml_path: STRING;
+entry_buffer: picking_object_t;
+buffer_name: STRING;
+prog_name: STRING;
+entry_array: ARRAY[*] OF picking_object_t) : INTEGER
 
 CONST
 	-- preceding tag IDs are reserved for system
-	list_tag = 3
-	struct_tag = 4
+	LIST_TAG = 3
+	ENTRY_TAG = 4
+	LIST_KEY = 'obj_list'
+	ENTRY_KEY = 'obj'
+	MAX_TAG_LEN = 16
 
 VAR
 	tag_id: INTEGER -- id of last scanned tag
-	tag_string: STRING[32] -- last scanned tagname
+	tag_string: STRING[MAX_TAG_LEN] -- last scanned tagname
 	func_code: INTEGER -- tag type of last scan
 
 	list_start: BOOLEAN
 	list_end: BOOLEAN
 
 	next_index: INTEGER
-	max: INTEGER
+	max_index: INTEGER
 
 BEGIN
-max = ARRAY_LEN(structArray)
 logText('Parser BEGIN')
+
+ -- close and repoen as read only after setting xml attr
+CLOSE FILE xml_file
 SET_FILE_ATR (xml_file, ATR_XML)
 CLR_IO_STAT(xml_file)
-
-OPEN FILE xml_file('RO', xmlPath) -- reopen as read only after setting xml attr
+OPEN FILE xml_file('RO', xml_path)
 STATUS = IO_STATUS(xml_file)
 catchError('Could not open xml_file', STATUS)
 
 -- register tags to be detected by scan
+-- Method Signature:
 -- XML_ADDTAG(FILE, 'TAG_NAME', TAG_LEN, CASE_SENSITIVE, TAG_ID, STATUS) 
-XML_ADDTAG(xml_file, 'list_tag', 16, FALSE, list_tag, STATUS)
-XML_ADDTAG(xml_file, 'struct_tag', 16, FALSE,struct_tag, STATUS)
-catchError('Register tags', STATUS)
+XML_ADDTAG(xml_file, LIST_KEY, MAX_TAG_LEN, FALSE, LIST_TAG, STATUS)
+catchError('Register list tag', STATUS)
+XML_ADDTAG(xml_file, ENTRY_KEY, MAX_TAG_LEN, FALSE,ENTRY_TAG, STATUS)
+catchError('Register entry tag', STATUS)
 
 -- initialize vars
 list_start = FALSE
 list_end = FALSE
 next_index = 1
+max_index = ARRAY_LEN(entry_array)
 
 -- scan until list start tag is found
 WHILE (list_start = FALSE) DO
@@ -46,7 +68,7 @@ WHILE (list_start = FALSE) DO
 		RETURN (0)
 	ENDIF
 	IF (STATUS = XML_FUNCTION) THEN -- scanned a tag
-		IF (tag_id = list_tag) THEN
+		IF (tag_id = LIST_TAG) THEN
 		logText('Found list start')
 		list_start = TRUE
 		ELSE
@@ -58,7 +80,7 @@ WHILE (list_start = FALSE) DO
 ENDWHILE
 
 -- scan & add list elements until end tag is found
-WHILE ((list_end = FALSE) AND (next_index <= 16)) DO
+WHILE ((list_end = FALSE) AND (next_index <= max_index)) DO
 	XML_SCAN(xml_file, tag_string, tag_id, func_code, STATUS)
 	IF ( STATUS = 0) THEN
 		logText('Parser reached EOF')
@@ -67,14 +89,15 @@ WHILE ((list_end = FALSE) AND (next_index <= 16)) DO
 	ENDIF
 	IF (STATUS = XML_FUNCTION) THEN -- scanned a tag
 		SELECT tag_id OF
-			CASE(list_tag):
+			CASE(LIST_TAG):
 				logText('Found list end')
 				list_end = TRUE
-			CASE(struct_tag):
+			CASE(ENTRY_TAG):
 				WRITE log('Adding struct: ', next_index, CR)
+				-- Method Signature:
 				-- XML_SETVAR(FILE, 'PROGRAM_NAME', 'VAR_NAME', STATUS) 
-				XML_SETVAR(xml_file, PROGRAM_NAME, BUFFER_NAME, STATUS)
-				structArray[next_index] = bufferStruct
+				XML_SETVAR(xml_file, prog_name, buffer_name, STATUS)
+				entry_array[next_index] = entry_buffer
 				next_index = next_index + 1
 		ENDSELECT
 	ELSE
@@ -84,5 +107,6 @@ ENDWHILE
 
 CLOSE FILE  xml_file
 logText('Parser END')
+-- return how many entries were actually filled
 RETURN (next_index-1)
-END parse_varlist
+END parse_obj_list

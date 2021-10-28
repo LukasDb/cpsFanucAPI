@@ -10,12 +10,24 @@ TYPE
 	string_val: STRING[32]
 	ENDSTRUCTURE
 	
-	picking_object = STRUCTURE
+	picking_object_t = STRUCTURE
+		x: REAL
+		y: REAL
+		dist_2d: REAL
+	ENDSTRUCTURE
+	
+	picking_point_t = STRUCTURE
 		x: REAL --mm
 		y: REAL --mm
 		z: REAL --mm
 		w: REAL --deg
 		p: REAL --deg
 		r: REAL --deg
-		dist_2d: REAL
+		rot_diff: REAL
 	ENDSTRUCTURE
+
+		
+		
+	
+
+	
