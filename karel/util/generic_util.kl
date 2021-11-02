@@ -1,19 +1,28 @@
-ROUTINE CNV_BOOL_STR(x: BOOLEAN): STRING
+ROUTINE BOOL_TO_STR(input_bool: BOOLEAN): STRING
 BEGIN
 	-- serialize booleans as c-like integers (can be casted in most languages)
-	IF(x) THEN
+	IF(input_bool) THEN
 		RETURN ('1')
 	ELSE
 		RETURN ('0')
 	ENDIF
-END CNV_BOOL_STR
+END BOOL_TO_STR
 
-ROUTINE CNV_STR_BOOL(x: STRING): BOOLEAN
+ROUTINE STR_TO_BOOL(input_str: STRING): BOOLEAN
 BEGIN
-	IF((STR_LEN(x) = 1) AND (x = '1')) THEN
+	IF((STR_LEN(input_str) = 1) AND (input_str = '1')) THEN
 		RETURN (TRUE)
 	ELSE
 		-- all invalid input strings are treated as false
 		RETURN (FALSE)
 	ENDIF
-END CNV_STR_BOOL
+END STR_TO_BOOL
+
+ROUTINE REAL_TO_STR(input_real: REAL) : STRING
+VAR
+    buffer : STRING[16]
+BEGIN
+    CNV_REAL_STR(input_real,8,8, buffer)
+    -- remove leading blank
+    RETURN (SUB_STR(buffer, 2, 254))
+END REAL_TO_STR
