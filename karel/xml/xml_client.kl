@@ -48,34 +48,32 @@ VAR
 -- requires socket_util, file_util
 %INCLUDE ../util/rest_util
 
-
-%INCLUDE varlist_parser
 %INCLUDE obj_list_parser
 %INCLUDE pp_list_parser
 
 BEGIN
 initLog('MC:log.txt')
 logText('Client BEGIN')
-disconnectFromServer(CONNECTION_TAG, socketFile) -- if previous execution was faulty
+DISCONNECT_FROM_SERVER(CONNECTION_TAG, socketFile) -- if previous execution was faulty
 
 OPEN FILE timeLog('RW', 'MC:timeLog.txt')
 
 FOR j = 1 TO 10 DO
 
-	startTime(timeRTT)
+	START_TIME(timeRTT)
 	
 	--query = 'GET /xml_endpoint?relative='+CNV_BOOL_STR(relativePos)
 	query = 'GET /picking-points'
-	makeRESTCall(query,CONNECTION_TAG, socketFile, pipeFile, pipe_path)
+	MAKE_REST_CALL(query,CONNECTION_TAG, socketFile, pipeFile, pipe_path)
 	
-	WRITE timeLog('RTT:', stopTime(timeRTT), CR)
+	WRITE timeLog('RTT:', STOP_TIME(timeRTT), CR)
 	
-	startTime(timeXML)
+	START_TIME(timeXML)
 	
 	--n = parse_varlist(pipeFile, pipe_path, bufferStruct, structs)
 	--n = parse_obj_list(pipeFile, pipe_path, bufferStruct, BUFFER_NAME, PROGRAM_NAME, structs)
-	n = parse_pp_list(pipeFile, pipe_path, bufferStruct, BUFFER_NAME, PROGRAM_NAME, structs)
-	WRITE timeLog('XML Parse:',  stopTime(timeXML), CR)
+	n = PARSE_PP_LIST(pipeFile, pipe_path, bufferStruct, BUFFER_NAME, PROGRAM_NAME, structs)
+	WRITE timeLog('XML Parse:',  STOP_TIME(timeXML), CR)
 	
 ENDFOR
 	

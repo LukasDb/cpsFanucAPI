@@ -1,27 +1,27 @@
-ROUTINE fileCopy(source: FILE; destination: FILE)
+ROUTINE FILE_COPY(source: FILE; destination: FILE)
 VAR
-stringBuffer: STRING[254] -- maximum string length that can be stored in a variable
-nBytes: INTEGER
+string_buffer: STRING[254] -- maximum string length that can be stored in a variable
+n_bytes: INTEGER
 
 BEGIN
-BYTES_AHEAD(source, nBytes, STATUS) -- initialize nBytes
+BYTES_AHEAD(source, n_bytes, STATUS) -- initialize nBytes
 catchError('Failed to scan for first bytes in source', STATUS)
 
-WHILE nBytes > 0 DO
-	READ source (stringBuffer::nBytes) -- read min(nBytes, 254) characters from source file
+WHILE n_bytes > 0 DO
+	READ source (string_buffer::n_bytes) -- read min(nBytes, 254) characters from source file
 
 	STATUS = IO_STATUS(source)
 	catchError('Failed to read from source', STATUS)
 	
-	WRITE log(stringBuffer, CR)
+	WRITE log(string_buffer, CR)
 
-	WRITE destination(stringBuffer)
+	WRITE destination(string_buffer)
 	
-	BYTES_AHEAD(source, nBytes, STATUS) -- update minBytes
+	BYTES_AHEAD(source, n_bytes, STATUS) -- update minBytes
 	-- interpret scanning error as end of file (as source could be e.g. closed socket)
 	IF STATUS <> 0 THEN
-		nBytes = 0
+		n_bytes = 0
 	ENDIF
 	--catchError('Failed to scan for next bytes in source', STATUS)
 ENDWHILE
-END fileCopy
+END FILE_COPY

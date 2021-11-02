@@ -1,12 +1,12 @@
-ROUTINE makeRESTCall(callString: STRING; serverTag : STRING; socketFile: FILE; outputFile: FILE; outputPath: STRING)
+ROUTINE MAKE_REST_CALL(call_string: STRING; server_tag : STRING; socket_file: FILE; output_file: FILE; output_path: STRING)
 BEGIN
-	connectToServer(serverTag, socketFile) -- establish connection
-	WRITE socketFile(callString, CR, CR) -- write and flush
-	OPEN FILE outputFile('RW', outputPath)
+	CONNECT_TO_SERVER(server_tag, socket_file) -- establish connection
+	WRITE socket_file(call_string, CR, CR) -- write and flush
+	OPEN FILE output_file('RW', output_path)
 	catchError('Could not open pipe file', STATUS)
 	
-	awaitSocket(socketFile, 1) -- active polling
-	fileCopy(socketFile, outputFile) -- socketFile -> outputFile
-	disconnectFromServer(serverTag, socketFile) -- cut connection
-	CLOSE FILE pipeFile -- close file so it can be reopened with proper modifiers by consumers
-END makeRESTCall
+	AWAIT_SOCKET(socket_file, 1) -- active polling
+	FILE_COPY(socket_file, output_file) -- socketFile -> outputFile
+	DISCONNECT_FROM_SERVER(server_tag, socket_file) -- cut connection
+	CLOSE FILE output_file -- close file so it can be reopened with proper modifiers by consumers
+END MAKE_REST_CALL

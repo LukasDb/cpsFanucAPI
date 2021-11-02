@@ -6,13 +6,13 @@ PROGRAM CONFIGURE_SOCKET
 %INCLUDE klevkeys
 
 VAR 
-	portString  : STRING[5]
-	portInteger : INTEGER
+	port_string  : STRING[5]
+	port_integer : INTEGER
 	
 	server		: STRING[32]
 	ip			: STRING[48]
 	protocol	: STRING[8]
-	statusDef 	: INTEGER
+	status_def 	: INTEGER
 
 	entry 		: INTEGER
 	STATUS	    : INTEGER
@@ -22,8 +22,8 @@ BEGIN
 	ip = '127.0.0.1'
 	
 	-- Server Port
-	portString = '5000'
-	portInteger = 5000
+	port_string = '5000'
+	port_integer = 5000
 	
 	-- Use C3 Tag for this socket communication
 	server  = '$HOSTC_CFG[3]'
@@ -37,8 +37,8 @@ BEGIN
 	SET_VAR(entry, '*SYSTEM*', server + '.$OPER', 3, STATUS)
 		
 	-- Set Port
-	SET_VAR(entry, '*SYSTEM*', server + '.$PORT' , portString, STATUS)
-	SET_VAR(entry, '*SYSTEM*', server + '.$SERVER_PORT' , portInteger, STATUS)
+	SET_VAR(entry, '*SYSTEM*', server + '.$PORT' , port_string, STATUS)
+	SET_VAR(entry, '*SYSTEM*', server + '.$SERVER_PORT' , port_integer, STATUS)
 	
 	-- Set Protocol -> Socket Messaging
 	protocol = 'SM'
@@ -46,7 +46,7 @@ BEGIN
 		
 	-- Set Server Status -> DEFINED	
 	statusDef = 2
-	SET_VAR(entry, '*SYSTEM*', server + '.$STATE', statusDef, STATUS)
+	SET_VAR(entry, '*SYSTEM*', server + '.$STATE', status_def, STATUS)
 	
 	--To apply changes reboot the robot in COLD start
 	

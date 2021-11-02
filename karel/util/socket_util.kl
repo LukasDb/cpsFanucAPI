@@ -1,31 +1,31 @@
-ROUTINE connectToServer(connectionTag : STRING; socketFile: FILE)
+ROUTINE CONNECT_TO_SERVER(connection_tag : STRING; socket_file: FILE)
 BEGIN
-	MSG_CONNECT(connectionTag, STATUS)
+	MSG_CONNECT(connection_tag, STATUS)
 	catchError('Connecting to Server', STATUS)
 
-	OPEN FILE socketFile('RW', connectionTag)
-	STATUS = IO_STATUS(socketFile)
+	OPEN FILE socket_file('RW', connection_tag)
+	STATUS = IO_STATUS(socket_file)
 	catchError('Could not open socket file', STATUS)
 	
-END connectToServer
+END CONNECT_TO_SERVER
 
-ROUTINE disconnectFromServer(connectionTag : STRING; socketFile: FILE)
+ROUTINE DISCONNECT_FROM_SERVER(connection_tag : STRING; socket_file: FILE)
 BEGIN
-	CLOSE FILE socketFile --close file first, otherwise msg_disco will abort
-	MSG_DISCO(connectionTag, STATUS) -- can fail if no current connection, don't catch error
+	CLOSE FILE socket_file --close file first, otherwise msg_disco will abort
+	MSG_DISCO(connection_tag, STATUS) -- can fail if no current connection, don't catch error
 	
-END disconnectFromServer
+END DISCONNECT_FROM_SERVER
 
 
-ROUTINE awaitSocket(socketFile: FILE; pollrate: INTEGER)
+ROUTINE AWAIT_SOCKET(socket_file: FILE; pollrate: INTEGER)
 VAR
-nBytes: INTEGER
+n_bytes: INTEGER
 
 BEGIN
 REPEAT
-	BYTES_AHEAD(socketFile, nBytes, STATUS)
+	BYTES_AHEAD(socket_file, n_bytes, STATUS)
 	catchError('Failed to scan socket', STATUS)
 	DELAY pollrate -- sleep for x  ms
-UNTIL nBytes > 0
+UNTIL n_bytes > 0
 
-END awaitSocket
+END AWAIT_SOCKET

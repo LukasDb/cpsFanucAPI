@@ -7,7 +7,7 @@
 -- prog_name: STRING						... Name of main program,  needed for XML_SCAN routine
 -- entry_array: ARRAY[*] OF picking_point_t	... Target array to parse file content into
 
-ROUTINE  parse_pp_list(
+ROUTINE  PARSE_PP_LIST(
 xml_file: FILE;
  xml_path: STRING;
 entry_buffer: picking_point_t;
@@ -19,8 +19,10 @@ CONST
 	-- preceding tag IDs are reserved for system
 	LIST_TAG = 3
 	ENTRY_TAG = 4
+	
 	LIST_KEY = 'pp_list'
 	ENTRY_KEY = 'pp'
+	
 	MAX_TAG_LEN = 16
 
 VAR
@@ -109,4 +111,4 @@ CLOSE FILE  xml_file
 logText('Parser END')
 -- return how many entries were actually filled
 RETURN (next_index-1)
-END parse_pp_list
+END PARSE_PP_LIST
