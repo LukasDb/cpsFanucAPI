@@ -62,7 +62,7 @@ ROUTINE set_reg_ : INTEGER FROM appmove
 
 BEGIN
 	
-	ABORT_TASK('motion', TRUE, TRUE, STATUS)
+	--ABORT_TASK('motion', TRUE, TRUE, STATUS)
 	RUN_TASK( 'motion', 1, FALSE, FALSE, 1 OR 2 OR 4, STATUS )
 	DELAY(100)
 	

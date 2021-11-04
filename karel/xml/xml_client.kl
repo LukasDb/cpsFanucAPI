@@ -1,5 +1,9 @@
 PROGRAM xml_client
 
+%NOLOCKGROUP
+%NOPAUSE=ERROR+COMMAND+TPENABLE
+%NOBUSYLAMP
+
 	%INCLUDE ../types
 	%INCLUDE klerxmlf
 
@@ -11,7 +15,16 @@ CONST
 	pipe_path = 'PIP:pipe.dt'
 	CONNECTION_TAG = 'C3:'
 	
-	relative_pos = TRUE
+	relative_pos = FALSE
+	
+	PR_XYZWPR = 41
+	
+	R_COORD1 = 51
+	R_COORD2 = 52
+	R_COORD3 = 53
+	R_COORD4 = 54
+	R_COORD5 = 55
+	R_COORD6 = 56
 
 VAR
 	bufferStruct: picking_point_t -- buffer for xml_scan, that needs static variable name as parameter
@@ -34,11 +47,14 @@ VAR
 	timeXML: INTEGER
 	k: INTEGER
 	
-	current_pos: XYZWPREXT
+	current_pos: XYZWPR
+		new_pos: XYZWPR
 	
 	query_keys: ARRAY[8] OF STRING[32]
 	query_values: ARRAY[8] OF STRING[32]
 	query: STRING[254]
+	
+ROUTINE set_reg_ : INTEGER FROM xml_client
 	
 --standalone imports
 %INCLUDE ../util/log_util
@@ -62,7 +78,10 @@ DISCONNECT_FROM_SERVER(CONNECTION_TAG, socketFile) -- if previous execution was 
 
 OPEN FILE timeLog('RW', 'MC:timeLog.txt')
 
-FOR j = 1 TO 10 DO
+	ABORT_TASK('motion', TRUE, TRUE, STATUS)
+	RUN_TASK( 'motion', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS )
+
+FOR j = 1 TO 1 DO
 
 	START_TIME(timeRTT)
 	
@@ -100,6 +119,24 @@ FOR j = 1 TO 10 DO
 	n = PARSE_PP_LIST(pipeFile, pipe_path, bufferStruct, BUFFER_NAME, PROGRAM_NAME, structs)
 	WRITE timeLog('XML Parse:',  STOP_TIME(timeXML), CR)
 	
+	new_pos = current_pos --Keep the current configuration
+
+	new_pos.x =  structs[1].x
+	new_pos.y =  structs[1].y
+	new_pos.z = structs[1].z
+	new_pos.w = structs[1].w
+	new_pos.p = structs[1].p
+	new_pos.r = structs[1].r
+	
+	SET_POS_REG(PR_XYZWPR, new_pos, STATUS)	-- set positions register	
+	IF (STATUS <> 0 ) THEN		
+		WRITE log ( '{"result":"failed", "program":"appmove", "reason":',STATUS,'}')	
+	ELSE
+		WRITE log ( '{"result":"success", "program":"appmove", "reason":',STATUS,'}')
+		FLG[4] = ON						
+		FLG[7] = ON
+	ENDIF
+	
 ENDFOR
 	
 FOR i = 1 TO n DO
@@ -121,4 +158,40 @@ ENDFOR
 CLOSE FILE timeLog
 logText('Client END')
 END xml_client
+
+ROUTINE set_reg_
+BEGIN
+			--set registers	
+		SET_REAL_REG( R_COORD1, structs[1].x, STATUS)
+		IF (STATUS <> 0 ) THEN
+			RETURN (-1)
+		ENDIF
+	
+		SET_REAL_REG( R_COORD2,  structs[1].y, STATUS)
+		IF (STATUS <> 0 ) THEN
+			RETURN (-1)
+		ENDIF
+	
+		SET_REAL_REG( R_COORD3,  structs[1].z, STATUS)
+		IF (STATUS <> 0 ) THEN
+			RETURN (-1)
+		ENDIF
+	
+		SET_REAL_REG( R_COORD4,  structs[1].w, STATUS)
+		IF (STATUS <> 0 ) THEN
+			RETURN (-1)
+		ENDIF
+	
+		SET_REAL_REG( R_COORD5,  structs[1].p, STATUS)
+		IF (STATUS <> 0 ) THEN
+			RETURN (-1)
+		ENDIF
+	
+		SET_REAL_REG( R_COORD6,  structs[1].r, STATUS)
+		IF (STATUS <> 0 ) THEN
+			RETURN (-1)
+		ENDIF
+		
+		RETURN (STATUS)	
+END set_reg_
 	

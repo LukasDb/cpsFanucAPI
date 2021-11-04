@@ -66,7 +66,7 @@ CONTROL_CODE	= 00000000 00000000;
   45:  ! absolut cartesian moition with  ;
   46:  LBL[4] ;
   47:L PR[41] 5000mm/sec CNT100    ;
-  48:  JMP LBL[999] ;
+  48:  JMP LBL[666] ;
   49:   ;
   50:  ! relative cartesian motion with  ;
   51:  LBL[5] ;
@@ -108,5 +108,6 @@ CONTROL_CODE	= 00000000 00000000;
   87:  R[55]=0    ;
   88:  R[56]=0    ;
   89:  JMP LBL[7] ;
+  90: LBL[666] ;
 /POS
 /END

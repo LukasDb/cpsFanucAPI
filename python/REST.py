@@ -8,9 +8,11 @@ import xml.etree.ElementTree as ET
 
 # Instantiate flask app and corresponding REST Api
 app = Flask(__name__)
+
 api = Api(app,
           default='FieldView Karel API',
           default_label='An API to fetch FieldView Data from Karel programs',
+          default_mediatype='application/xml',
           # prefix API calls
           prefix='/fieldview',
           # keep doc on root url
@@ -143,7 +145,8 @@ class PickingPointsEndpoint(Resource):
         parser.add_argument('r', type=float)
         args = parser.parse_args()
 
-        pose_6d = np.array([4.2, 7.8, 2.3, 45, 90, 180])
+        pose_6d = np.array([114, 400, 800, 70, 40, 30])
+
         offset_6d = np.array([0, 0, 0, 0, 0, 0])
 
         if args['relative']:
