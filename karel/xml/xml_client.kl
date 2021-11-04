@@ -34,9 +34,12 @@ VAR
 	timeXML: INTEGER
 	k: INTEGER
 	
-	query: STRING[254]
 	current_pos: XYZWPREXT
-
+	
+	query_keys: ARRAY[8] OF STRING[32]
+	query_values: ARRAY[8] OF STRING[32]
+	query: STRING[254]
+	
 --standalone imports
 %INCLUDE ../util/log_util
 %INCLUDE ../util/generic_util
@@ -65,13 +68,26 @@ FOR j = 1 TO 10 DO
 	
 	current_pos = CURPOS(0,0)
 	
-	query = 'GET /picking-points?relative='+BOOL_TO_STR(relative_pos)
-	query = query + '&x=' + REAL_TO_STR(current_pos.x)
-	query = query + '&y=' + REAL_TO_STR(current_pos.y)
-	query = query + '&z=' + REAL_TO_STR(current_pos.z)
-	query = query + '&w=' + REAL_TO_STR(current_pos.w)
-	query = query + '&p=' + REAL_TO_STR(current_pos.p)
-	query = query + '&r=' + REAL_TO_STR(current_pos.r)
+	query_keys[1] = 'obj_id'
+	query_keys[2] = 'relative'
+	query_keys[3] = 'x'
+	query_keys[4] = 'y'
+	query_keys[5] = 'z'
+	query_keys[6] = 'w'
+	query_keys[7] = 'p'
+	query_keys[8] = 'r'
+	
+	query_values[1] = '0'
+	query_values[2] = BOOL_TO_STR(relative_pos)
+	query_values[3] = REAL_TO_STR(current_pos.x)
+	query_values[4] = REAL_TO_STR(current_pos.y)
+	query_values[5] = REAL_TO_STR(current_pos.z)
+	query_values[6] = REAL_TO_STR(current_pos.w)
+	query_values[7] = REAL_TO_STR(current_pos.p)
+	query_values[8] = REAL_TO_STR(current_pos.r)
+	
+	-- 'GET /picking-points?obj_id=0&relative=0&x=0&y=0&z=0&w=0&p=0&r=0'
+	query = BUILD_PARAM_REQUEST('GET', 'fieldview/picking-points', query_keys, query_values)
 	
 	MAKE_REST_CALL(query,CONNECTION_TAG, socketFile, pipeFile, pipe_path)
 	
@@ -91,6 +107,7 @@ FOR i = 1 TO n DO
 	-- WRITE log('	x:', structs[i].x, CR)
 	-- WRITE log('	y:', structs[i].y, CR)
 	-- WRITE log('	dist_2d:', structs[i].dist_2d, CR)
+	WRITE log('    id:', structs[i].id, CR)
 	WRITE log('    x:', structs[i].x, CR)
 	WRITE log('    y:', structs[i].y, CR)
 	WRITE log('    z:', structs[i].z, CR)

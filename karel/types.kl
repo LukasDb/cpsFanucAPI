@@ -1,12 +1,14 @@
 TYPE
 	
 	picking_object_t = STRUCTURE
+		id: STRING[32]
 		x: REAL
 		y: REAL
 		dist_2d: REAL
 	ENDSTRUCTURE
 	
 	picking_point_t = STRUCTURE
+		id: STRING[32]
 		x: REAL --mm
 		y: REAL --mm
 		z: REAL --mm

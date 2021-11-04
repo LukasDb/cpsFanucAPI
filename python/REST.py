@@ -8,7 +8,13 @@ import xml.etree.ElementTree as ET
 
 # Instantiate flask app and corresponding REST Api
 app = Flask(__name__)
-api = Api(app)
+api = Api(app,
+          default='FieldView Karel API',
+          default_label='An API to fetch FieldView Data from Karel programs',
+          # prefix API calls
+          prefix='/fieldview',
+          # keep doc on root url
+          doc='/')
 
 PO_KEY = "obj"
 PP_KEY = "pp"
@@ -21,20 +27,23 @@ PP_QUALITY_KEY = "rot_diff"
 
 
 class PickingObject:
-    def __init__(self, position_2d, quality):
+    def __init__(self, id, position_2d, quality):
+        self.id = str(id)
         self.x = float(position_2d[0])
         self.y = float(position_2d[1])
         self.quality = quality
 
     def add_to_xml(self, parent):
-        params = {'x': str(self.x),
+        params = {'id': self.id,
+                  'x': str(self.x),
                   'y': str(self.y),
                   PO_QUALITY_KEY: str(self.quality)}
         ET.SubElement(parent, PO_KEY, params)
 
 
 class PickingPoint:
-    def __init__(self, pose_6d, quality):
+    def __init__(self, id, pose_6d, quality):
+        self.id = str(id)
         self.x = float(pose_6d[0])
         self.y = float(pose_6d[1])
         self.z = float(pose_6d[2])
@@ -44,7 +53,8 @@ class PickingPoint:
         self.quality = quality
 
     def add_to_xml(self, parent):
-        params = {'x': str(self.x),
+        params = {'id': self.id,
+                  'x': str(self.x),
                   'y': str(self.y),
                   'z': str(self.z),
                   'w': str(self.w),
@@ -52,6 +62,17 @@ class PickingPoint:
                   'r': str(self.r),
                   PP_QUALITY_KEY: str(self.quality)}
         ET.SubElement(parent, PP_KEY, params)
+
+    def make_xml(self):
+        params = {'id': self.id,
+                  'x': str(self.x),
+                  'y': str(self.y),
+                  'z': str(self.z),
+                  'w': str(self.w),
+                  'p': str(self.p),
+                  'r': str(self.r),
+                  PP_QUALITY_KEY: str(self.quality)}
+        return ET.Element(PP_KEY, params)
 
 
 def serialize_picking_objects_xml(picking_objects: [PickingObject]):
@@ -99,7 +120,7 @@ class ObjectsEndpoint(Resource):
         pos_2d = np.array([2, 1])
         distance = np.sqrt(np.square(pos_2d[0])+np.square(pos_2d[1]))
 
-        objects = [PickingObject(pos_2d, distance) for i in range(5)]
+        objects = [PickingObject(str(i), pos_2d, distance) for i in range(5)]
 
         return Response(serialize_picking_objects_xml(objects), mimetype='text/xml')
 
@@ -112,7 +133,8 @@ class PickingPointsEndpoint(Resource):
     def get(self):
         # Parse arguments
         parser = reqparse.RequestParser()
-        parser.add_argument('relative', type=int)
+        parser.add_argument('obj_id', type=str, required=True)
+        parser.add_argument('relative', type=int, required=True)
         parser.add_argument('x', type=float)
         parser.add_argument('y', type=float)
         parser.add_argument('z', type=float)
@@ -137,12 +159,49 @@ class PickingPointsEndpoint(Resource):
         rotation_delta = calc_rotation_delta(current=pose_6d[3:], target=offset_6d[3:])
         corrected_pose_6d = pose_6d - offset_6d
 
-        pps = [PickingPoint(corrected_pose_6d, rotation_delta) for i in range(5)]
+        pps = [PickingPoint(str(i), corrected_pose_6d, rotation_delta) for i in range(5)]
 
         return Response(serialize_picking_points_xml(pps), mimetype='text/xml')
 
 
 # --------------------------------------------------------------------------
+
+@api.route('/track-picking-point')
+class PickingPointsEndpoint(Resource):
+    # HTTP GET
+    def get(self):
+        # Parse arguments
+        parser = reqparse.RequestParser()
+        parser.add_argument('pp_id', type=str, required=True)
+        parser.add_argument('relative', type=int, required=True)
+        parser.add_argument('x', type=float)
+        parser.add_argument('y', type=float)
+        parser.add_argument('z', type=float)
+        parser.add_argument('w', type=float)
+        parser.add_argument('p', type=float)
+        parser.add_argument('r', type=float)
+        args = parser.parse_args()
+
+        pose_6d = np.array([4.2, 7.8, 2.3, 45, 90, 180])
+        offset_6d = np.array([0, 0, 0, 0, 0, 0])
+
+        if args['relative']:
+            # if parameter relative is set, the 6d parameters are assumed to be present
+            offset_6d = np.array([
+                args['x'],
+                args['y'],
+                args['z'],
+                args['w'],
+                args['p'],
+                args['r']])
+
+        rotation_delta = calc_rotation_delta(current=pose_6d[3:], target=offset_6d[3:])
+        corrected_pose_6d = pose_6d - offset_6d
+
+        pp = PickingPoint(str(0), corrected_pose_6d, rotation_delta)
+
+        return Response(ET.tostring(pp.make_xml(), encoding="ascii", method="xml"), mimetype='text/xml')
+
 
 if __name__ == '__main__':
     # Host on 0.0.0.0 (all local addresses)
