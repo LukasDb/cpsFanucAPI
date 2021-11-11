@@ -25,6 +25,8 @@ CONST
 	R_COORD4 = 54
 	R_COORD5 = 55
 	R_COORD6 = 56
+	
+	margin = 0.1
 
 VAR
 	bufferStruct: picking_point_t -- buffer for xml_scan, that needs static variable name as parameter
@@ -79,13 +81,7 @@ DISCONNECT_FROM_SERVER(CONNECTION_TAG, socketFile) -- if previous execution was 
 OPEN FILE timeLog('RW', 'MC:timeLog.txt')
 
 	ABORT_TASK('motion', TRUE, TRUE, STATUS)
-	RUN_TASK( 'motion', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS )
-
-FOR j = 1 TO 1 DO
-
-	START_TIME(timeRTT)
-	
-	current_pos = CURPOS(0,0)
+	WRITE log ('starting first ', STATUS)
 	
 	query_keys[1] = 'obj_id'
 	query_keys[2] = 'relative'
@@ -95,7 +91,9 @@ FOR j = 1 TO 1 DO
 	query_keys[6] = 'w'
 	query_keys[7] = 'p'
 	query_keys[8] = 'r'
-	
+
+REPEAT
+	current_pos = CURPOS(0,0)
 	query_values[1] = '0'
 	query_values[2] = BOOL_TO_STR(relative_pos)
 	query_values[3] = REAL_TO_STR(current_pos.x)
@@ -108,6 +106,7 @@ FOR j = 1 TO 1 DO
 	-- 'GET /picking-points?obj_id=0&relative=0&x=0&y=0&z=0&w=0&p=0&r=0'
 	query = BUILD_PARAM_REQUEST('GET', 'fieldview/picking-points', query_keys, query_values)
 	
+	START_TIME(timeRTT)
 	MAKE_REST_CALL(query,CONNECTION_TAG, socketFile, pipeFile, pipe_path)
 	
 	WRITE timeLog('RTT:', STOP_TIME(timeRTT), CR)
@@ -128,6 +127,7 @@ FOR j = 1 TO 1 DO
 	new_pos.p = structs[1].p
 	new_pos.r = structs[1].r
 	
+	RUN_TASK( 'motion', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS )
 	SET_POS_REG(PR_XYZWPR, new_pos, STATUS)	-- set positions register	
 	IF (STATUS <> 0 ) THEN		
 		WRITE log ( '{"result":"failed", "program":"appmove", "reason":',STATUS,'}')	
@@ -137,7 +137,12 @@ FOR j = 1 TO 1 DO
 		FLG[7] = ON
 	ENDIF
 	
-ENDFOR
+	DELAY(500)
+	ABORT_TASK('motion', TRUE, TRUE, STATUS)
+		
+	current_pos = CURPOS(0,0)
+	
+UNTIL (XYZWPR_ALMOST_EQUAL(current_pos, new_pos, margin))
 	
 FOR i = 1 TO n DO
 	-- WRITE log('Struct ', i, CR)
@@ -154,44 +159,41 @@ FOR i = 1 TO n DO
 	WRITE log('    rot_diff:', structs[i].rot_diff, CR)
 ENDFOR
 
+--DELAY(200)
+-- PAUSE_TASK('motion', TRUE, TRUE, STATUS)
+	--ABORT_TASK('motion', TRUE, TRUE, STATUS)
+--WRITE log ('aborting first ', STATUS)
+
+--DELAY(1000)
+--CONT_TASK('motion', STATUS)
+--RUN_TASK( 'motion', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS )
+		--FLG[4] = ON						
+		--FLG[7] = ON
+--WRITE log ('starting second ', STATUS)
+--DELAY(200)
+-- ABORT_TASK('motion', TRUE, TRUE, STATUS)
+
+current_pos = CURPOS(0,0)
+WRITE log(current_pos.x, '--', new_pos.x, CR)
+
+WRITE log(current_pos.y, '--', new_pos.y, CR)
+
+
+WRITE log(current_pos.z, '--', new_pos.z, CR)
+
+
+WRITE log(current_pos.w, '--', new_pos.w, CR)
+
+
+WRITE log(current_pos.p, '--', new_pos.p, CR)
+
+
+WRITE log(current_pos.r, '--', new_pos.r, CR)
+
+WRITE log(XYZWPR_ALMOST_EQUAL(current_pos, new_pos, margin), CR)
+
 
 CLOSE FILE timeLog
 logText('Client END')
 END xml_client
-
-ROUTINE set_reg_
-BEGIN
-			--set registers	
-		SET_REAL_REG( R_COORD1, structs[1].x, STATUS)
-		IF (STATUS <> 0 ) THEN
-			RETURN (-1)
-		ENDIF
-	
-		SET_REAL_REG( R_COORD2,  structs[1].y, STATUS)
-		IF (STATUS <> 0 ) THEN
-			RETURN (-1)
-		ENDIF
-	
-		SET_REAL_REG( R_COORD3,  structs[1].z, STATUS)
-		IF (STATUS <> 0 ) THEN
-			RETURN (-1)
-		ENDIF
-	
-		SET_REAL_REG( R_COORD4,  structs[1].w, STATUS)
-		IF (STATUS <> 0 ) THEN
-			RETURN (-1)
-		ENDIF
-	
-		SET_REAL_REG( R_COORD5,  structs[1].p, STATUS)
-		IF (STATUS <> 0 ) THEN
-			RETURN (-1)
-		ENDIF
-	
-		SET_REAL_REG( R_COORD6,  structs[1].r, STATUS)
-		IF (STATUS <> 0 ) THEN
-			RETURN (-1)
-		ENDIF
-		
-		RETURN (STATUS)	
-END set_reg_
 	
