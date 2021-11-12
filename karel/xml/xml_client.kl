@@ -196,4 +196,3 @@ WRITE log(XYZWPR_ALMOST_EQUAL(current_pos, new_pos, margin), CR)
 CLOSE FILE timeLog
 logText('Client END')
 END xml_client
-	

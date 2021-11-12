@@ -27,7 +27,6 @@ BEGIN
 	ENDIF
 	
 FOR i = 1 TO( max_index-1) DO
-	WRITE log(i, CR)
 	request = request + keys[i] + '=' + values[i] + '&'
 ENDFOR
 request = request + keys[max_index] + '=' + values[max_index]

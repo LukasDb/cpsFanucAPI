@@ -147,6 +147,7 @@ class PickingPointsEndpoint(Resource):
 
         pose_6d = np.array([700, -150, 800, -45, -45, 0])
 
+
         #pose_6d = np.array([900, -200, 600, -90, -90, 0])
 
         offset_6d = np.array([0, 0, 0, 0, 0, 0])
@@ -187,7 +188,10 @@ class PickingPointsEndpoint(Resource):
         parser.add_argument('r', type=float)
         args = parser.parse_args()
 
-        pose_6d = np.array([4.2, 7.8, 2.3, 45, 90, 180])
+        pose_6d = np.array([700, -150, 800, -45, -45, 0])
+
+        pose_6d = np.array([900, -200, 600, -90, -90, 0])
+
         offset_6d = np.array([0, 0, 0, 0, 0, 0])
 
         if args['relative']:
