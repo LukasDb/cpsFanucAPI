@@ -3,7 +3,7 @@ import requests
 import time
 
 # api-endpoint
-URL = "http://127.0.0.1/KAREL/appmonitor"
+URL = "http://127.0.0.1/KAREL/rsiposition"
 
 # defining a params dict for the parameters to be sent to the API
 PARAMS = {}
