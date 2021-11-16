@@ -13,7 +13,7 @@ start = time.perf_counter()
 r = requests.get(url=URL, params=PARAMS)
 # extracting data in json format
 data = r.json()
-print(f"Completed Execution in {time.perf_counter() - start} seconds")
+print(f"Completed Execution in {(time.perf_counter() - start) * 1000} ms")
 
 # extracting latitude, longitude and formatted address
 # of the first matching location
