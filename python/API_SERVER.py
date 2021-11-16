@@ -115,23 +115,30 @@ def calc_rotation_delta(*, current, target):
 class ObjectsEndpoint(Resource):
     # HTTP GET
     def get(self):
-        # Parse arguments
-        parser = reqparse.RequestParser()
-        # TODO if params needed
-        args = parser.parse_args()
 
         pos_2d = np.array([2, 1])
         distance = np.sqrt(np.square(pos_2d[0])+np.square(pos_2d[1]))
 
         objects = [PickingObject(str(i), pos_2d, distance) for i in range(5)]
 
-        return Response(serialize_picking_objects_xml(objects), mimetype='text/xml')
+        return Response(serialize_picking_objects_xml(objects), mimetype='application/xml')
 
 # --------------------------------------------------------------------------
 
 @api.route('/picking-points')
 class PickingPointsEndpoint(Resource):
+    parser = reqparse.RequestParser()
+    parser.add_argument('obj_id', type=str, required=True, help='ID of object for which picking points should be provided')
+    parser.add_argument('relative', type=int, required=True, help='{0,1} Flag to decide on relative/absolute position')
+    parser.add_argument('x', type=float, help='Position (assumed 0 if missing)')
+    parser.add_argument('y', type=float, help='Position (assumed 0 if missing)')
+    parser.add_argument('z', type=float, help='Position (assumed 0 if missing)')
+    parser.add_argument('w', type=float, help='Orientation (assumed 0 if missing)')
+    parser.add_argument('p', type=float, help='Orientation (assumed 0 if missing)')
+    parser.add_argument('r', type=float, help='Orientation (assumed 0 if missing)')
+
     # HTTP GET
+    @api.expect(parser)
     def get(self):
         # Parse arguments
         parser = reqparse.RequestParser()
@@ -167,25 +174,27 @@ class PickingPointsEndpoint(Resource):
 
         pps = [PickingPoint(str(i), corrected_pose_6d, rotation_delta) for i in range(5)]
 
-        return Response(serialize_picking_points_xml(pps), mimetype='text/xml')
+        return Response(serialize_picking_points_xml(pps), mimetype='application/xml')
 
 # --------------------------------------------------------------------------
 
 @api.route('/track-picking-point')
-class PickingPointsEndpoint(Resource):
+class TrackPickingPointEndpoint(Resource):
+    parser = reqparse.RequestParser()
+    parser.add_argument('pp_id', type=str, required=True, help='ID of picking point that should be tracked')
+    parser.add_argument('relative', type=int, required=True, help='{0,1} Flag to decide on relative/absolute position')
+    parser.add_argument('x', type=float, help='Position (assumed 0 if missing)')
+    parser.add_argument('y', type=float, help='Position (assumed 0 if missing)')
+    parser.add_argument('z', type=float, help='Position (assumed 0 if missing)')
+    parser.add_argument('w', type=float, help='Orientation (assumed 0 if missing)')
+    parser.add_argument('p', type=float, help='Orientation (assumed 0 if missing)')
+    parser.add_argument('r', type=float, help='Orientation (assumed 0 if missing)')
+
     # HTTP GET
+    @api.expect(parser)
     def get(self):
         # Parse arguments
-        parser = reqparse.RequestParser()
-        parser.add_argument('pp_id', type=str, required=True)
-        parser.add_argument('relative', type=int, required=True)
-        parser.add_argument('x', type=float)
-        parser.add_argument('y', type=float)
-        parser.add_argument('z', type=float)
-        parser.add_argument('w', type=float)
-        parser.add_argument('p', type=float)
-        parser.add_argument('r', type=float)
-        args = parser.parse_args()
+        args = self.parser.parse_args()
 
         pose_6d = np.array([700, -150, 800, -45, -45, 0])
         pose_6d = np.array([900, -200, 600, -90, -90, 0])
@@ -207,7 +216,7 @@ class PickingPointsEndpoint(Resource):
 
         pp = PickingPoint(str(0), corrected_pose_6d, rotation_delta)
 
-        return Response(ET.tostring(pp.make_xml(), encoding="ascii", method="xml"), mimetype='text/xml')
+        return Response(ET.tostring(pp.make_xml(), encoding="ascii", method="xml"), mimetype='application/xml')
         #return error_response
 
 if __name__ == '__main__':
