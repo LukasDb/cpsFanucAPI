@@ -59,6 +59,7 @@ VAR
 	pp_query_keys: ARRAY[8] OF STRING[32]
 	pp_query_values: ARRAY[8] OF STRING[32]
 	query: STRING[254]
+	query_success: BOOLEAN
 	
 -- standalone imports
 %INCLUDE util/log_util
@@ -68,8 +69,8 @@ VAR
 %INCLUDE util/socket_util
 %INCLUDE util/file_util
 %INCLUDE util/stopwatch_util
-%INCLUDE xml/obj_list_parser	
-%INCLUDE xml/pp_list_parser
+%INCLUDE xml/obj_parser	
+%INCLUDE xml/pp_parser
 
 -- requires socket_util, file_util
 %INCLUDE util/rest_util
@@ -98,6 +99,11 @@ WRITE log_time('RTT:', STOP_TIME(time_rtt), CR)
 START_TIME(time_xml)
 n = PARSE_OBJ_LIST(pipe_file, pipe_path, obj_buffer, OBJ_BUFFER_NAME, PROGRAM_NAME, obj_array)
 WRITE log_time('XML Parse:',  STOP_TIME(time_xml), CR)
+
+IF(n = 0) THEN
+	logText('Objects call returned no entry, aborting')
+	RETURN
+ENDIF
 
 -- log prints
 FOR i = 1 TO n DO
@@ -144,6 +150,11 @@ START_TIME(time_xml)
 n = PARSE_PP_LIST(pipe_file, pipe_path, pp_buffer, PP_BUFFER_NAME, PROGRAM_NAME, pp_array)
 WRITE log_time('XML Parse:',  STOP_TIME(time_xml), CR)
 
+IF(n = 0) THEN
+	logText('Picking points call returned no entry, aborting')
+	RETURN
+ENDIF
+
 -- log prints
 FOR i = 1 TO n DO
 	WRITE log('Picking Point ', pp_array[i].id, CR)
@@ -185,7 +196,7 @@ REPEAT
 		FLG[7] = ON
 	ENDIF
 	-- TODO polling interval
-	DELAY(500)
+	DELAY(1000)
 	ABORT_TASK('motion', TRUE, TRUE, STATUS) -- terminate motion task & associated movement
 	START_TIME(time_total)
 
@@ -211,8 +222,12 @@ REPEAT
 	WRITE log_time('RTT:', STOP_TIME(time_rtt), CR)
 	
 	START_TIME(time_xml)
-	PARSE_PP_SINGLE(pipe_file, pipe_path, pp_buffer, PP_BUFFER_NAME, PROGRAM_NAME)
+	query_success = PARSE_PP_SINGLE(pipe_file, pipe_path, pp_buffer, PP_BUFFER_NAME, PROGRAM_NAME)
 	WRITE log_time('XML Parse:',  STOP_TIME(time_xml), CR)
+	IF(NOT query_success) THEN
+		logText('Tracking call returned no entry, aborting')
+		RETURN
+	ENDIF
 
 	-- set target position
 	target_pos = current_pos

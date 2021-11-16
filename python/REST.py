@@ -27,6 +27,7 @@ PP_LIST_KEY = "pp_list"
 PO_QUALITY_KEY = "dist_2d"
 PP_QUALITY_KEY = "rot_diff"
 
+error_response = Response(ET.tostring(ET.Element("error"), encoding="ascii", method="xml"), mimetype='text/xml')
 
 class PickingObject:
     def __init__(self, id, position_2d, quality):
@@ -126,7 +127,6 @@ class ObjectsEndpoint(Resource):
 
         return Response(serialize_picking_objects_xml(objects), mimetype='text/xml')
 
-
 # --------------------------------------------------------------------------
 
 @api.route('/picking-points')
@@ -169,7 +169,6 @@ class PickingPointsEndpoint(Resource):
 
         return Response(serialize_picking_points_xml(pps), mimetype='text/xml')
 
-
 # --------------------------------------------------------------------------
 
 @api.route('/track-picking-point')
@@ -189,8 +188,7 @@ class PickingPointsEndpoint(Resource):
         args = parser.parse_args()
 
         pose_6d = np.array([700, -150, 800, -45, -45, 0])
-
-        pose_6d = np.array([900, -200, 600, -90, -90, 0])
+        #pose_6d = np.array([900, -200, 600, -90, -90, 0])
 
         offset_6d = np.array([0, 0, 0, 0, 0, 0])
 
@@ -210,7 +208,7 @@ class PickingPointsEndpoint(Resource):
         pp = PickingPoint(str(0), corrected_pose_6d, rotation_delta)
 
         return Response(ET.tostring(pp.make_xml(), encoding="ascii", method="xml"), mimetype='text/xml')
-
+        #return error_response
 
 if __name__ == '__main__':
     # Host on 0.0.0.0 (all local addresses)

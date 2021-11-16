@@ -1,11 +1,12 @@
--- Parameter Description:
+-- Routine Signature description:
 
 -- xml_file: FILE								... File Variable
---  xml_path: STRING							... File path, needed to open file
--- entry_buffer: picking_point_t				... Global buffer variable, needed for XML_SCAN routine
--- buffer_name: STRING						... Name of global buffer variable in main program,  needed for XML_SCAN routine
--- prog_name: STRING						... Name of main program,  needed for XML_SCAN routine
+--  xml_path: STRING						... File path, needed to open file
+-- entry_buffer: picking_point_t				... Global buffer variable, needed for XML_SCAN subroutine
+-- buffer_name: STRING						... Name of global buffer variable in main program,  needed for XML_SCAN subroutine
+-- prog_name: STRING						... Name of main program,  needed for XML_SCAN subroutine
 -- entry_array: ARRAY[*] OF picking_point_t	... Target array to parse file content into
+-- RETURN: INTEGER						... Number of entries that were filled into target array
 
 ROUTINE  PARSE_PP_LIST(
 xml_file: FILE;
@@ -113,23 +114,24 @@ logText('Parser END')
 RETURN (next_index-1)
 END PARSE_PP_LIST
 
--- Parameter Description:
+-- Routine Signature description:
 
 -- xml_file: FILE								... File Variable
---  xml_path: STRING							... File path, needed to open file
--- entry_buffer: picking_point_t				... Global buffer variable, needed for XML_SCAN routine
--- buffer_name: STRING						... Name of global buffer variable in main program,  needed for XML_SCAN routine
--- prog_name: STRING						... Name of main program,  needed for XML_SCAN routine
+--  xml_path: STRING						... File path, needed to open file
+-- entry_buffer: picking_point_t				... Global buffer variable, needed for XML_SCAN subroutine
+-- buffer_name: STRING						... Name of global buffer variable in main program,  needed for XML_SCAN subroutine
+-- prog_name: STRING						... Name of main program,  needed for XML_SCAN subroutine
+-- RETURN: BOOLEAN						... Flag that is true if an entry was written into the buffer variable
 
 ROUTINE  PARSE_PP_SINGLE(
 xml_file: FILE;
  xml_path: STRING;
 entry_buffer: picking_point_t;
 buffer_name: STRING;
-prog_name: STRING)
+prog_name: STRING): BOOLEAN
 
 CONST
-	-- preceding tag IDs are reserved for system (1,2)
+	-- use same tag number as list parser
 	ENTRY_TAG = 4
 	
 	ENTRY_KEY = 'pp'
@@ -140,12 +142,7 @@ VAR
 	tag_id: INTEGER -- id of last scanned tag
 	tag_string: STRING[MAX_TAG_LEN] -- last scanned tagname
 	func_code: INTEGER -- tag type of last scan
-
-	list_start: BOOLEAN
-	list_end: BOOLEAN
-
-	next_index: INTEGER
-	max_index: INTEGER
+	scan_end: BOOLEAN
 
 BEGIN
 logText('Parser BEGIN')
@@ -165,24 +162,25 @@ XML_ADDTAG(xml_file, ENTRY_KEY, MAX_TAG_LEN, FALSE,ENTRY_TAG, STATUS)
 catchError('Register entry tag', STATUS)
 
 -- initialize vars
-list_end = FALSE
+scan_end = FALSE
 
 -- scan & add one entry
-WHILE (list_end = FALSE) DO
+WHILE (scan_end = FALSE) DO
 XML_SCAN(xml_file, tag_string, tag_id, func_code, STATUS)
 IF ( STATUS = 0) THEN
-	logText('Parser reached EOF')
+	logText('Parser reached EOF prematurely')
 	CLOSE FILE  xml_file
-	RETURN
+	-- return if entry was actually filled
+	RETURN (FALSE)
 ENDIF
 IF (STATUS = XML_FUNCTION) THEN -- scanned a tag
 	SELECT tag_id OF
 		CASE(ENTRY_TAG):
-			WRITE log('Adding struct: ', next_index, CR)
+			WRITE log('Adding struct ', CR)
 			-- Method Signature:
 			-- XML_SETVAR(FILE, 'PROGRAM_NAME', 'VAR_NAME', STATUS) 
 			XML_SETVAR(xml_file, prog_name, buffer_name, STATUS)
-			list_end = TRUE
+			scan_end = TRUE
 	ENDSELECT
 ELSE
 catchError('Failed parsing list', STATUS)
@@ -191,5 +189,6 @@ ENDWHILE
 
 CLOSE FILE  xml_file
 logText('Parser END')
--- return how many entries were actually filled
+-- return if entry was actually filled
+RETURN (TRUE)
 END PARSE_PP_SINGLE
