@@ -20,7 +20,7 @@ CONST
 	
 	PR_XYZWPR = 41
 	
-	err_margin = 0.1
+	err_margin = 2
 
 VAR
 	-- buffers for xml_scan, it needs static variable name as parameter

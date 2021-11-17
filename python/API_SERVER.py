@@ -1,4 +1,5 @@
 # Webserver
+import random
 import time
 
 import numpy as np
@@ -28,6 +29,10 @@ PO_QUALITY_KEY = "dist_2d"
 PP_QUALITY_KEY = "rot_diff"
 
 error_response = Response(ET.tostring(ET.Element("error"), encoding="ascii", method="xml"), mimetype='text/xml')
+
+fake_target_points = [np.array([500, -150, 600, 45, -45, 0]), np.array([900, -200, 600, -90, -90, 0])]
+current_idx = 0
+
 
 class PickingObject:
     def __init__(self, id, position_2d, quality):
@@ -130,16 +135,19 @@ class PickingPointsEndpoint(Resource):
     parser = reqparse.RequestParser()
     parser.add_argument('obj_id', type=str, required=True, help='ID of object for which picking points should be provided')
     parser.add_argument('relative', type=int, required=True, help='{0,1} Flag to decide on relative/absolute position')
-    parser.add_argument('x', type=float, help='Position (assumed 0 if missing)')
-    parser.add_argument('y', type=float, help='Position (assumed 0 if missing)')
-    parser.add_argument('z', type=float, help='Position (assumed 0 if missing)')
-    parser.add_argument('w', type=float, help='Orientation (assumed 0 if missing)')
-    parser.add_argument('p', type=float, help='Orientation (assumed 0 if missing)')
-    parser.add_argument('r', type=float, help='Orientation (assumed 0 if missing)')
+    parser.add_argument('x', type=float, help='TCP Position (assumed 0 if missing)')
+    parser.add_argument('y', type=float, help='TCP Position (assumed 0 if missing)')
+    parser.add_argument('z', type=float, help='TCP Position (assumed 0 if missing)')
+    parser.add_argument('w', type=float, help='TCP Orientation (assumed 0 if missing)')
+    parser.add_argument('p', type=float, help='TCP Orientation (assumed 0 if missing)')
+    parser.add_argument('r', type=float, help='TCP Orientation (assumed 0 if missing)')
 
     # HTTP GET
     @api.expect(parser)
     def get(self):
+        global fake_target_points
+        global current_idx
+
         # Parse arguments
         parser = reqparse.RequestParser()
         parser.add_argument('obj_id', type=str, required=True)
@@ -152,12 +160,17 @@ class PickingPointsEndpoint(Resource):
         parser.add_argument('r', type=float)
         args = parser.parse_args()
 
-        pose_6d = np.array([700, -150, 800, -45, -45, 0])
+        # new target each pp call
 
+        if current_idx == 0:
+            current_idx = 1
+        else:
+            current_idx = 0
 
-        #pose_6d = np.array([900, -200, 600, -90, -90, 0])
+        pose_6d = fake_target_points[current_idx]
 
         offset_6d = np.array([0, 0, 0, 0, 0, 0])
+
 
         if args['relative']:
             # if parameter relative is set, the 6d parameters are assumed to be present
@@ -183,21 +196,32 @@ class TrackPickingPointEndpoint(Resource):
     parser = reqparse.RequestParser()
     parser.add_argument('pp_id', type=str, required=True, help='ID of picking point that should be tracked')
     parser.add_argument('relative', type=int, required=True, help='{0,1} Flag to decide on relative/absolute position')
-    parser.add_argument('x', type=float, help='Position (assumed 0 if missing)')
-    parser.add_argument('y', type=float, help='Position (assumed 0 if missing)')
-    parser.add_argument('z', type=float, help='Position (assumed 0 if missing)')
-    parser.add_argument('w', type=float, help='Orientation (assumed 0 if missing)')
-    parser.add_argument('p', type=float, help='Orientation (assumed 0 if missing)')
-    parser.add_argument('r', type=float, help='Orientation (assumed 0 if missing)')
+    parser.add_argument('x', type=float, help='TCP Position (assumed 0 if missing)')
+    parser.add_argument('y', type=float, help='TCP Position (assumed 0 if missing)')
+    parser.add_argument('z', type=float, help='TCP Position (assumed 0 if missing)')
+    parser.add_argument('w', type=float, help='TCP Orientation (assumed 0 if missing)')
+    parser.add_argument('p', type=float, help='TCP Orientation (assumed 0 if missing)')
+    parser.add_argument('r', type=float, help='TCP Orientation (assumed 0 if missing)')
 
     # HTTP GET
     @api.expect(parser)
     def get(self):
+        global fake_target_points
+        global current_idx
         # Parse arguments
         args = self.parser.parse_args()
 
-        pose_6d = np.array([700, -150, 800, -45, -45, 0])
-        pose_6d = np.array([900, -200, 600, -90, -90, 0])
+        pose_6d = fake_target_points[current_idx]
+
+        # simulate pose estimation jitter
+        dist_scaling = 5
+        rot_scaling = 5
+        pose_6d[0] += (random.random() - 0.5) * dist_scaling
+        pose_6d[1] += (random.random() - 0.5) * dist_scaling
+        pose_6d[2] += (random.random() - 0.5) * dist_scaling
+        pose_6d[3] += (random.random() - 0.5) * rot_scaling
+        pose_6d[4] += (random.random() - 0.5) * rot_scaling
+        pose_6d[5] += (random.random() - 0.5) * rot_scaling
 
         offset_6d = np.array([0, 0, 0, 0, 0, 0])
 
