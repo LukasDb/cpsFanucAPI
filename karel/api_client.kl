@@ -20,7 +20,8 @@ CONST
 	
 	PR_XYZWPR = 41
 	
-	err_margin = 2
+	mm_err_margin = 2
+	angle_err_margin = 2
 
 VAR
 	-- buffers for xml_scan, it needs static variable name as parameter
@@ -192,7 +193,7 @@ REPEAT
 		logText('Failed to update position register')	
 	ELSE
 		logText('Position register updated')
-		FLG[4] = ON						
+		FLG[3] = ON						
 		FLG[7] = ON
 	ENDIF
 	-- TODO polling interval
@@ -245,7 +246,7 @@ REPEAT
 	WRITE log(current_pos.p, '--', target_pos.p, CR)
 	WRITE log(current_pos.r, '--', target_pos.r, CR, CR)
 	
-UNTIL (XYZWPR_ALMOST_EQUAL(current_pos, target_pos, err_margin))
+UNTIL (XYZWPR_ALMOST_EQUAL(current_pos, target_pos, mm_err_margin, angle_err_margin))
 
 
 logText('Client END')

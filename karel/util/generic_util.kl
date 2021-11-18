@@ -36,14 +36,14 @@ BEGIN
 	ENDIF
 END REAL_ALMOST_EQUAL
 
-ROUTINE XYZWPR_ALMOST_EQUAL(first_pos: XYZWPR; second_pos: XYZWPR; margin: REAL): BOOLEAN
+ROUTINE XYZWPR_ALMOST_EQUAL(first_pos: XYZWPR; second_pos: XYZWPR; dist_margin: REAL; rot_margin: REAL): BOOLEAN
 BEGIN
-	IF(	REAL_ALMOST_EQUAL(first_pos.x, second_pos.x, margin) AND
-		REAL_ALMOST_EQUAL(first_pos.y, second_pos.y, margin) AND
-		REAL_ALMOST_EQUAL(first_pos.z, second_pos.z, margin) AND
-		REAL_ALMOST_EQUAL(first_pos.w, second_pos.w, margin) AND
-		REAL_ALMOST_EQUAL(first_pos.p, second_pos.p, margin) AND
-		REAL_ALMOST_EQUAL(first_pos.r, second_pos.r, margin))THEN
+	IF(	REAL_ALMOST_EQUAL(first_pos.x, second_pos.x, dist_margin) AND
+		REAL_ALMOST_EQUAL(first_pos.y, second_pos.y, dist_margin) AND
+		REAL_ALMOST_EQUAL(first_pos.z, second_pos.z, dist_margin) AND
+		REAL_ALMOST_EQUAL(first_pos.w, second_pos.w, rot_margin) AND
+		REAL_ALMOST_EQUAL(first_pos.p, second_pos.p, rot_margin) AND
+		REAL_ALMOST_EQUAL(first_pos.r, second_pos.r, rot_margin))THEN
 			RETURN (TRUE)
 	ELSE
 		RETURN(FALSE)
