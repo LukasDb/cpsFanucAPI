@@ -44,8 +44,6 @@ VAR
 	pipe_file: FILE
 	
 	-- log output
-	log: FILE
-	log_time: FILE
 	time_rtt: INTEGER
 	time_xml: INTEGER
 	time_total: INTEGER
@@ -63,7 +61,6 @@ VAR
 	query_success: BOOLEAN
 	
 -- standalone imports
-%INCLUDE util/log_util
 %INCLUDE util/generic_util
 
 -- requires log_util
@@ -77,9 +74,6 @@ VAR
 %INCLUDE util/rest_util
 
 BEGIN
--- setup logfile
-initLog('MC:log.txt')
-logText('Client BEGIN')
 
 -- set system vars for some reason
 $GROUP[1].$UTOOL = $MNUTOOL[1,1] --uTool 1
@@ -89,7 +83,6 @@ $GROUP[1].$UFRAME = $MNUFRAME[1,1] --uFrame 1
 ABORT_TASK('motion', TRUE, TRUE, STATUS)
 DISCONNECT_FROM_SERVER(CONNECTION_TAG, socket_file)
 
-OPEN FILE log_time('RW', 'MC:log_time.txt')
 
 ---------------------------
 -- Fetch picking objects
@@ -99,24 +92,17 @@ query = 'GET /fieldview/objects'
 
 START_TIME(time_rtt)
 MAKE_REST_CALL(query,CONNECTION_TAG, socket_file, pipe_file, pipe_path)
-WRITE log_time('RTT:', STOP_TIME(time_rtt), CR)
+
 
 START_TIME(time_xml)
 n = PARSE_OBJ_LIST(pipe_file, pipe_path, obj_buffer, OBJ_BUFFER_NAME, PROGRAM_NAME, obj_array)
-WRITE log_time('XML Parse:',  STOP_TIME(time_xml), CR)
+
 
 IF(n = 0) THEN
-	logText('Objects call returned no entry, aborting')
+
 	RETURN
 ENDIF
 
--- log prints
-FOR i = 1 TO n DO
-	WRITE log('Picking Object ', obj_array[i].id, CR)
-	WRITE log('x: ', obj_array[i].x, CR)
-	WRITE log('y: ', obj_array[i].y, CR)
-	WRITE log('dist_2d: ', obj_array[i].dist_2d, CR)
-ENDFOR
 
 -- TODO arbitrarily choose last
 target_obj_id = obj_array[n].id
@@ -149,28 +135,16 @@ query = BUILD_PARAM_REQUEST('GET', 'fieldview/picking-points', pp_query_keys, pp
 
 START_TIME(time_rtt)
 MAKE_REST_CALL(query,CONNECTION_TAG, socket_file, pipe_file, pipe_path)
-WRITE log_time('RTT:', STOP_TIME(time_rtt), CR)
+
 
 START_TIME(time_xml)
 n = PARSE_PP_LIST(pipe_file, pipe_path, pp_buffer, PP_BUFFER_NAME, PROGRAM_NAME, pp_array)
-WRITE log_time('XML Parse:',  STOP_TIME(time_xml), CR)
+
 
 IF(n = 0) THEN
-	logText('Picking points call returned no entry, aborting')
+
 	RETURN
 ENDIF
-
--- log prints
-FOR i = 1 TO n DO
-	WRITE log('Picking Point ', pp_array[i].id, CR)
-	WRITE log('x: ', pp_array[i].x, CR)
-	WRITE log('y: ', pp_array[i].y, CR)
-	WRITE log('z: ', pp_array[i].z, CR)
-	WRITE log('w: ', pp_array[i].w, CR)
-	WRITE log('p: ', pp_array[i].p, CR)
-	WRITE log('r: ', pp_array[i].r, CR)
-	WRITE log('rot_diff: ', pp_array[i].rot_diff, CR)
-ENDFOR
 
 -- arbitrarily choose last
 target_pp_id = pp_array[n].id
@@ -191,12 +165,12 @@ REPEAT
 	---------------------------
 
 	RUN_TASK( 'motion', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS ) -- queue motion task
-	WRITE log_time('Total downtime:',  STOP_TIME(time_total), CR)
+
 	SET_POS_REG(PR_XYZWPR, target_pos, STATUS)	-- set positions register
 	IF (STATUS <> 0 ) THEN		
-		logText('Failed to update position register')	
+
 	ELSE
-		logText('Position register updated')
+
 		FLG[4] = ON						
 		FLG[7] = ON
 	ENDIF
@@ -224,13 +198,13 @@ REPEAT
 	
 	START_TIME(time_rtt)
 	MAKE_REST_CALL(query,CONNECTION_TAG, socket_file, pipe_file, pipe_path)
-	WRITE log_time('RTT:', STOP_TIME(time_rtt), CR)
+
 	
 	START_TIME(time_xml)
 	query_success = PARSE_PP_SINGLE(pipe_file, pipe_path, pp_buffer, PP_BUFFER_NAME, PROGRAM_NAME)
-	WRITE log_time('XML Parse:',  STOP_TIME(time_xml), CR)
+
 	IF(NOT query_success) THEN
-		logText('Tracking call returned no entry, aborting')
+
 		RETURN
 	ENDIF
 
@@ -242,18 +216,6 @@ REPEAT
 	target_pos.w = pp_buffer.w
 	target_pos.p = pp_buffer.p
 	target_pos.r = pp_buffer.r
-
-	WRITE log(current_pos.x, '--', target_pos.x, CR)
-	WRITE log(current_pos.y, '--', target_pos.y, CR)
-	WRITE log(current_pos.z, '--', target_pos.z, CR)
-	WRITE log(current_pos.w, '--', target_pos.w, CR)
-	WRITE log(current_pos.p, '--', target_pos.p, CR)
-	WRITE log(current_pos.r, '--', target_pos.r, CR, CR)
-	
 UNTIL (FALSE)
 
-
-logText('Client END')
-CLOSE FILE log_time
-CLOSE FILE log
 END api_client

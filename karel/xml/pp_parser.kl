@@ -38,7 +38,6 @@ VAR
 	max_index: INTEGER
 
 BEGIN
-logText('Parser BEGIN')
 
  -- close and repoen as read only after setting xml attr
 CLOSE FILE xml_file
@@ -46,15 +45,12 @@ SET_FILE_ATR (xml_file, ATR_XML)
 CLR_IO_STAT(xml_file)
 OPEN FILE xml_file('RO', xml_path)
 STATUS = IO_STATUS(xml_file)
-catchError('Could not open xml_file', STATUS)
 
 -- register tags to be detected by scan
 -- Method Signature:
 -- XML_ADDTAG(FILE, 'TAG_NAME', TAG_LEN, CASE_SENSITIVE, TAG_ID, STATUS) 
 XML_ADDTAG(xml_file, LIST_KEY, MAX_TAG_LEN, FALSE, LIST_TAG, STATUS)
-catchError('Register list tag', STATUS)
 XML_ADDTAG(xml_file, ENTRY_KEY, MAX_TAG_LEN, FALSE,ENTRY_TAG, STATUS)
-catchError('Register entry tag', STATUS)
 
 -- initialize vars
 list_start = FALSE
@@ -66,19 +62,15 @@ max_index = ARRAY_LEN(entry_array)
 WHILE (list_start = FALSE) DO
 	XML_SCAN(xml_file, tag_string, tag_id, func_code, STATUS)
 	IF ( STATUS = 0) THEN
-		logText('Parser reached EOF')
 		CLOSE FILE  xml_file
 		RETURN (0)
 	ENDIF
 	IF (STATUS = XML_FUNCTION) THEN -- scanned a tag
 		IF (tag_id = LIST_TAG) THEN
-		logText('Found list start')
 		list_start = TRUE
 		ELSE
-		logText('Found some tag')
 		ENDIF
 	ELSE
-	catchError('Failed finding list start', STATUS)
 	ENDIF
 ENDWHILE
 
@@ -86,17 +78,14 @@ ENDWHILE
 WHILE ((list_end = FALSE) AND (next_index <= max_index)) DO
 	XML_SCAN(xml_file, tag_string, tag_id, func_code, STATUS)
 	IF ( STATUS = 0) THEN
-		logText('Parser reached EOF')
 		CLOSE FILE  xml_file
 		RETURN (0)
 	ENDIF
 	IF (STATUS = XML_FUNCTION) THEN -- scanned a tag
 		SELECT tag_id OF
 			CASE(LIST_TAG):
-				logText('Found list end')
 				list_end = TRUE
 			CASE(ENTRY_TAG):
-				WRITE log('Adding struct: ', next_index, CR)
 				-- Method Signature:
 				-- XML_SETVAR(FILE, 'PROGRAM_NAME', 'VAR_NAME', STATUS) 
 				XML_SETVAR(xml_file, prog_name, buffer_name, STATUS)
@@ -104,12 +93,10 @@ WHILE ((list_end = FALSE) AND (next_index <= max_index)) DO
 				next_index = next_index + 1
 		ENDSELECT
 	ELSE
-	catchError('Failed parsing list', STATUS)
 	ENDIF
 ENDWHILE
 
 CLOSE FILE  xml_file
-logText('Parser END')
 -- return how many entries were actually filled
 RETURN (next_index-1)
 END PARSE_PP_LIST
@@ -145,7 +132,6 @@ VAR
 	scan_end: BOOLEAN
 
 BEGIN
-logText('Parser BEGIN')
 
  -- close and repoen as read only after setting xml attr
 CLOSE FILE xml_file
@@ -153,13 +139,11 @@ SET_FILE_ATR (xml_file, ATR_XML)
 CLR_IO_STAT(xml_file)
 OPEN FILE xml_file('RO', xml_path)
 STATUS = IO_STATUS(xml_file)
-catchError('Could not open xml_file', STATUS)
 
 -- register tags to be detected by scan
 -- Method Signature:
 -- XML_ADDTAG(FILE, 'TAG_NAME', TAG_LEN, CASE_SENSITIVE, TAG_ID, STATUS) 
 XML_ADDTAG(xml_file, ENTRY_KEY, MAX_TAG_LEN, FALSE,ENTRY_TAG, STATUS)
-catchError('Register entry tag', STATUS)
 
 -- initialize vars
 scan_end = FALSE
@@ -168,7 +152,6 @@ scan_end = FALSE
 WHILE (scan_end = FALSE) DO
 XML_SCAN(xml_file, tag_string, tag_id, func_code, STATUS)
 IF ( STATUS = 0) THEN
-	logText('Parser reached EOF prematurely')
 	CLOSE FILE  xml_file
 	-- return if entry was actually filled
 	RETURN (FALSE)
@@ -176,19 +159,16 @@ ENDIF
 IF (STATUS = XML_FUNCTION) THEN -- scanned a tag
 	SELECT tag_id OF
 		CASE(ENTRY_TAG):
-			WRITE log('Adding struct ', CR)
 			-- Method Signature:
 			-- XML_SETVAR(FILE, 'PROGRAM_NAME', 'VAR_NAME', STATUS) 
 			XML_SETVAR(xml_file, prog_name, buffer_name, STATUS)
 			scan_end = TRUE
 	ENDSELECT
 ELSE
-catchError('Failed parsing list', STATUS)
 ENDIF
 ENDWHILE
 
 CLOSE FILE  xml_file
-logText('Parser END')
 -- return if entry was actually filled
 RETURN (TRUE)
 END PARSE_PP_SINGLE

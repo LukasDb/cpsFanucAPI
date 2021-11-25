@@ -5,15 +5,11 @@ n_bytes: INTEGER
 
 BEGIN
 BYTES_AHEAD(source, n_bytes, STATUS) -- initialize nBytes
-catchError('Failed to scan for first bytes in source', STATUS)
 
 WHILE n_bytes > 0 DO
 	READ source (string_buffer::n_bytes) -- read min(nBytes, 254) characters from source file
 
 	STATUS = IO_STATUS(source)
-	catchError('Failed to read from source', STATUS)
-	
-	WRITE log(string_buffer, CR)
 
 	WRITE destination(string_buffer)
 	
@@ -22,6 +18,5 @@ WHILE n_bytes > 0 DO
 	IF STATUS <> 0 THEN
 		n_bytes = 0
 	ENDIF
-	--catchError('Failed to scan for next bytes in source', STATUS)
 ENDWHILE
 END FILE_COPY
