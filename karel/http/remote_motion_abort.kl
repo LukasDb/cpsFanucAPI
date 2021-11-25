@@ -1,4 +1,4 @@
-PROGRAM rsiposition
+PROGRAM remotemotionabort
 
 %COMMENT = 'rsiposition v1'
 %NOLOCKGROUP
@@ -11,19 +11,18 @@ VAR
 
 BEGIN
 	
-	current_pos = CURPOS(0,0)
+	
 	OPEN FILE rf_ ('RW', 'RD:RESPONSE.HTM')
 	STATUS = IO_STATUS(rf_)
 	IF (STATUS <> 0) THEN
 		WRITE rf_ ( '{"result":"failed", "program":"rsiposition", "reason":',STATUS,'}') 
 	ELSE
-		WRITE rf_ ( '{"x":', current_pos.x,
-					', "y":', current_pos.y,
-					', "z":', current_pos.z,
-					', "w":', current_pos.w,
-					', "p":', current_pos.p,
-					', "r":', current_pos.r,
-					'}')
+		ABORT_TASK('motion', TRUE, TRUE, STATUS)
+		IF (STATUS <> 0) THEN
+			WRITE rf_ ( '{"result":"failed", "program":"rsiposition", "reason":',STATUS,'}') 
+		ELSE
+			WRITE rf_ ( '{"result":"success", "program":"appmove", "reason":',STATUS,'}')
+		ENDIF
 	ENDIF
 	CLOSE FILE rf_
-END rsiposition
+END remotemotionabort

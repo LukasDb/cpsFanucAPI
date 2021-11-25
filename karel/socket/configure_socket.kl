@@ -19,7 +19,7 @@ VAR
 
 BEGIN
 	-- Server IP that robot willl connect to as client
-	ip = '127.0.0.1'
+	ip = '10.162.12.207'
 	
 	-- Server Port
 	port_string = '5000'
@@ -45,7 +45,7 @@ BEGIN
 	SET_VAR(entry, '*SYSTEM*', server + '.$PROTOCOL', protocol, STATUS)	
 		
 	-- Set Server Status -> DEFINED	
-	statusDef = 2
+	status_def = 2
 	SET_VAR(entry, '*SYSTEM*', server + '.$STATE', status_def, STATUS)
 	
 	--To apply changes reboot the robot in COLD start

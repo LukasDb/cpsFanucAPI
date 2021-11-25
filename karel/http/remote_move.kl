@@ -1,0 +1,146 @@
+PROGRAM remotemove
+
+%COMMENT = 'appmove v1'
+%NOLOCKGROUP
+%NOPAUSE=ERROR+COMMAND+TPENABLE
+%NOBUSYLAMP
+
+CONST 
+	JJR_MOTION = 1 -- joint relative joint interpolation
+	JJA_MOTION = 2 -- joint absolut joint interpolation
+	
+	JCA_MOTION = 3 -- cartesian absolut joint interpolation
+	LCA_MOTION = 4 -- cartesian absolut linear interpolation
+	JCR_MOTION = 5 -- cartesian relative joint interpolation 
+	LCR_MOTION = 6 -- cartesian relative linear interpolation
+	
+	WAIT_MOTION = 7 -- wait for motion
+	
+	COORD_LEN = 6
+	
+	--register ids
+	PR_JOINTS = 40
+	PR_XYZWPR = 41
+	
+	R_COORD1 = 51
+	R_COORD2 = 52
+	R_COORD3 = 53
+	R_COORD4 = 54
+	R_COORD5 = 55
+	R_COORD6 = 56
+	
+	
+VAR
+
+--program parameter
+	rf_ :FILE
+	STATUS: INTEGER
+	
+	x: STRING[127]
+	y: STRING[127]
+	z: STRING[127]
+	w: STRING[127]
+	p: STRING[127]
+	r: STRING[127]
+	
+	opt: INTEGER
+
+	coord: ARRAY[COORD_LEN] OF REAL
+
+	cur_pos: XYZWPR
+	new_pos: XYZWPR	
+	
+
+ROUTINE check_param_ : INTEGER FROM remotemove
+
+BEGIN
+	
+	ABORT_TASK('motion', TRUE, TRUE, STATUS)
+	RUN_TASK( 'motion', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS ) -- queue motion task
+	
+	$GROUP[1].$UTOOL = $MNUTOOL[1,1] --uTool 1
+	$GROUP[1].$UFRAME = $MNUFRAME[1,1] --uFrame 1
+	cur_pos = CURPOS(0,0);
+
+	OPEN FILE rf_ ('RW', 'RD:RESPONSE.HTM')
+	STATUS = IO_STATUS(rf_)
+	IF (STATUS <> 0) THEN
+		WRITE rf_ ( '{"result":"failed", "program":"appmotion", "reason":',STATUS,'}') 
+	ENDIF
+
+	opt = check_param_
+	
+	IF (opt = 0) THEN -- succesful
+		new_pos = cur_pos --Keep the current configuration
+
+		new_pos.x = coord[1]
+		new_pos.y = coord[2]
+		new_pos.z = coord[3]
+		new_pos.w = coord[4]
+		new_pos.p = coord[5]
+		new_pos.r = coord[6]
+		
+		SET_POS_REG(PR_XYZWPR, new_pos, STATUS)	-- set positions register
+		IF (STATUS <> 0 ) THEN	
+			WRITE rf_ ( '{"result":"failed", "program":"appmove", "reason":',STATUS,'}')				
+		ELSE
+			FLG[4] = ON						
+			FLG[7] = ON
+			WRITE rf_ ( '{"result":"success", "program":"appmove", "reason":',STATUS,'}')
+		ENDIF
+	ELSE
+		WRITE rf_ ( '{"result":"failed", "program":"appmove", "reason":',STATUS,'}')		
+	ENDIF
+
+	CLOSE FILE rf_
+	
+END remotemove
+
+-------------------------------------- ROUTINE ----------------------------------------
+
+ROUTINE check_param_
+VAR
+	stat_: INTEGER
+BEGIN
+	
+	stat_ = 0
+	
+	WRITE ('status while parameter check ', stat_ ,CR)
+	
+	IF (UNINIT(x) OR 
+		UNINIT(y) OR 
+		UNINIT(z) OR 
+		UNINIT(w) OR 
+		UNINIT(p) OR 
+		UNINIT(r)) THEN
+		WRITE ('uninitialized variable',CR)
+		RETURN (-1)
+	ELSE
+		
+		IF (stat_ <> -1) THEN
+	
+			IF ((x = '') OR
+				(y = '') OR
+				(z = '') OR
+				(w = '') OR
+				(p = '') OR
+				(r = '')) THEN
+				WRITE ('coordinate empty',CR)
+				RETURN(-1)
+			ENDIF
+	
+			-- convert the positions to real numbers
+			CNV_STR_REAL(x, coord[1])
+			CNV_STR_REAL(y, coord[2])
+			CNV_STR_REAL(z, coord[3])
+			CNV_STR_REAL(w, coord[4])
+			CNV_STR_REAL(p, coord[5])
+			CNV_STR_REAL(r, coord[6])
+			WRITE ('coordinate set',CR)
+			RETURN (0)
+		ENDIF
+		
+	ENDIF
+	
+	RETURN(-1)
+END check_param_

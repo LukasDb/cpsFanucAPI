@@ -1,0 +1,37 @@
+PROGRAM remotetargetcheck
+%COMMENT = 'rsiposition v1'
+%NOLOCKGROUP
+%NOBUSYLAMP
+
+CONST
+	PR_XYZWPR = 41
+	error_margin = 0.1
+
+VAR
+	rf_ :FILE
+	STATUS: INTEGER
+	current_pos: XYZWPR
+	target_pos: XYZWPR
+	
+%INCLUDE ../util/generic_util
+
+BEGIN
+	
+	$GROUP[1].$UTOOL = $MNUTOOL[1,1] --uTool 1
+	$GROUP[1].$UFRAME = $MNUFRAME[1,1] --uFrame 1
+	current_pos = CURPOS(0,0)
+	target_pos = GET_POS_REG(PR_XYZWPR, STATUS)
+	
+	OPEN FILE rf_ ('RW', 'RD:RESPONSE.HTM')
+	STATUS = IO_STATUS(rf_)
+	IF (STATUS <> 0) THEN
+		WRITE rf_ ( '{"result":"failed", "program":"rsiposition", "reason":',STATUS,'}') 
+	ELSE
+		IF(XYZWPR_ALMOST_EQUAL(current_pos, target_pos, error_margin, error_margin)) THEN
+			WRITE rf_('{"target_reached":', 1, '}')
+		ELSE
+			WRITE rf_('{"target_reached":', 0, '}')
+		ENDIF
+	ENDIF
+	CLOSE FILE rf_
+END remotetargetcheck
