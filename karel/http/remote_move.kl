@@ -1,6 +1,6 @@
 PROGRAM remotemove
 
-%COMMENT = 'appmove v1'
+%COMMENT = ' Remote Move'
 %NOLOCKGROUP
 %NOPAUSE=ERROR+COMMAND+TPENABLE
 %NOBUSYLAMP
@@ -14,21 +14,10 @@ CONST
 	JCR_MOTION = 5 -- cartesian relative joint interpolation 
 	LCR_MOTION = 6 -- cartesian relative linear interpolation
 	
-	WAIT_MOTION = 7 -- wait for motion
-	
 	COORD_LEN = 6
 	
 	--register ids
-	PR_JOINTS = 40
 	PR_XYZWPR = 41
-	
-	R_COORD1 = 51
-	R_COORD2 = 52
-	R_COORD3 = 53
-	R_COORD4 = 54
-	R_COORD5 = 55
-	R_COORD6 = 56
-	
 	
 VAR
 
@@ -65,7 +54,7 @@ BEGIN
 	OPEN FILE rf_ ('RW', 'RD:RESPONSE.HTM')
 	STATUS = IO_STATUS(rf_)
 	IF (STATUS <> 0) THEN
-		WRITE rf_ ( '{"result":"failed", "program":"appmotion", "reason":',STATUS,'}') 
+		WRITE rf_ ( '{"result":"failed", "reason":',STATUS,'}') 
 	ENDIF
 
 	opt = check_param_
@@ -82,14 +71,14 @@ BEGIN
 		
 		SET_POS_REG(PR_XYZWPR, new_pos, STATUS)	-- set positions register
 		IF (STATUS <> 0 ) THEN	
-			WRITE rf_ ( '{"result":"failed", "program":"appmove", "reason":',STATUS,'}')				
+			WRITE rf_ ( '{"result":"failed", "reason":',STATUS,'}')				
 		ELSE
 			FLG[4] = ON						
 			FLG[7] = ON
-			WRITE rf_ ( '{"result":"success", "program":"appmove", "reason":',STATUS,'}')
+			WRITE rf_ ( '{"result":"success"}')
 		ENDIF
 	ELSE
-		WRITE rf_ ( '{"result":"failed", "program":"appmove", "reason":',STATUS,'}')		
+		WRITE rf_ ( '{"result":"failed", "reason":',STATUS,'}')		
 	ENDIF
 
 	CLOSE FILE rf_

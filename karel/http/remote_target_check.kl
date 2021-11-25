@@ -1,5 +1,5 @@
 PROGRAM remotetargetcheck
-%COMMENT = 'rsiposition v1'
+%COMMENT = 'Remote Target Check'
 %NOLOCKGROUP
 %NOBUSYLAMP
 
@@ -25,12 +25,12 @@ BEGIN
 	OPEN FILE rf_ ('RW', 'RD:RESPONSE.HTM')
 	STATUS = IO_STATUS(rf_)
 	IF (STATUS <> 0) THEN
-		WRITE rf_ ( '{"result":"failed", "program":"rsiposition", "reason":',STATUS,'}') 
+		WRITE rf_ ( '{"result":"failed", "reason":',STATUS,'}') 
 	ELSE
 		IF(XYZWPR_ALMOST_EQUAL(current_pos, target_pos, error_margin, error_margin)) THEN
-			WRITE rf_('{"target_reached":', 1, '}')
+			WRITE rf_('{"result":"success", "target_reached":', 1, '}')
 		ELSE
-			WRITE rf_('{"target_reached":', 0, '}')
+			WRITE rf_('{"result":"success", "target_reached":', 0, '}')
 		ENDIF
 	ENDIF
 	CLOSE FILE rf_

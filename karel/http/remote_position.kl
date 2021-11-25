@@ -1,5 +1,5 @@
 PROGRAM remoteposition
-%COMMENT = 'rsiposition v1'
+%COMMENT = ' Remote Position'
 %NOLOCKGROUP
 %NOBUSYLAMP
 
@@ -20,9 +20,10 @@ BEGIN
 	OPEN FILE rf_ ('RW', 'RD:RESPONSE.HTM')
 	STATUS = IO_STATUS(rf_)
 	IF (STATUS <> 0) THEN
-		WRITE rf_ ( '{"result":"failed", "program":"rsiposition", "reason":',STATUS,'}') 
+		WRITE rf_ ( '{"result":"failed", "reason":',STATUS,'}') 
 	ELSE
-		WRITE rf_ ( '{"x":', current_pos.x,
+		WRITE rf_ (  '{"result":"success"', 
+					', "x":', current_pos.x,
 					', "y":', current_pos.y,
 					', "z":', current_pos.z,
 					', "w":', current_pos.w,

@@ -1,6 +1,6 @@
 PROGRAM remotemotionabort
 
-%COMMENT = 'rsiposition v1'
+%COMMENT = 'Remote Motion Abort'
 %NOLOCKGROUP
 %NOBUSYLAMP
 
@@ -15,13 +15,13 @@ BEGIN
 	OPEN FILE rf_ ('RW', 'RD:RESPONSE.HTM')
 	STATUS = IO_STATUS(rf_)
 	IF (STATUS <> 0) THEN
-		WRITE rf_ ( '{"result":"failed", "program":"rsiposition", "reason":',STATUS,'}') 
+		WRITE rf_ ( '{"result":"failed", "reason":',STATUS,'}') 
 	ELSE
 		ABORT_TASK('motion', TRUE, TRUE, STATUS)
 		IF (STATUS <> 0) THEN
-			WRITE rf_ ( '{"result":"failed", "program":"rsiposition", "reason":',STATUS,'}') 
+			WRITE rf_ ( '{"result":"failed", "reason":',STATUS,'}') 
 		ELSE
-			WRITE rf_ ( '{"result":"success", "program":"appmove", "reason":',STATUS,'}')
+			WRITE rf_ ( '{"result":"success"}')
 		ENDIF
 	ENDIF
 	CLOSE FILE rf_
