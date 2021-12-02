@@ -30,7 +30,7 @@ PP_QUALITY_KEY = "rot_diff"
 
 error_response = Response(ET.tostring(ET.Element("error"), encoding="ascii", method="xml"), mimetype='text/xml')
 
-fake_target_points = [np.array([500, -150, 600, 45, -45, 0]), np.array([900, -200, 600, -90, -90, 0])]
+fake_target_points = [np.array([600, -300, 700, -170, -50, 0]), np.array([600, -300, 700, -170, -50, -50])]
 current_idx = 0
 
 
