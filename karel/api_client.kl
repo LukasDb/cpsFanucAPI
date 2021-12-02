@@ -83,6 +83,29 @@ $GROUP[1].$UFRAME = $MNUFRAME[1,1] --uFrame 1
 ABORT_TASK('motion', TRUE, TRUE, STATUS)
 DISCONNECT_FROM_SERVER(CONNECTION_TAG, socket_file)
 
+current_pos = CURPOS(0,0)
+current_pos.x = current_pos.x + 5
+current_pos.y = current_pos.y + 5
+current_pos.z = current_pos.z + 5
+current_pos.w = current_pos.w + 5
+current_pos.p = current_pos.p + 5
+current_pos.r = current_pos.r + 5
+
+SET_POS_REG(40, current_pos, STATUS)
+
+RUN_TASK( 'static_track', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS ) -- queue motion task
+DELAY(1000)
+SET_VAR(0, '*SYSTEM*', '$DPM_SCH[1].$GRP[1].$OFS[1].$INI_OFS', 5.0, STATUS)
+SET_VAR(0, '*SYSTEM*', '$DPM_SCH[1].$GRP[1].$OFS[2].$INI_OFS', 5.0, STATUS)
+SET_VAR(0, '*SYSTEM*', '$DPM_SCH[1].$GRP[1].$OFS[3].$INI_OFS', 5.0, STATUS)
+WRITE (STATUS, CR)
+DELAY(1000)
+SET_VAR(0, '*SYSTEM*', '$DPM_SCH[1].$GRP[1].$OFS[1].$INI_OFS', -5.0, STATUS)
+SET_VAR(0, '*SYSTEM*', '$DPM_SCH[1].$GRP[1].$OFS[2].$INI_OFS', -5.0, STATUS)
+SET_VAR(0, '*SYSTEM*', '$DPM_SCH[1].$GRP[1].$OFS[3].$INI_OFS', -5.0, STATUS)
+DELAY(1000)
+
+RETURN
 
 ---------------------------
 -- Fetch picking objects

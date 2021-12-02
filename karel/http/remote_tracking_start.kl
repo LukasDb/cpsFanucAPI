@@ -1,0 +1,66 @@
+PROGRAM REMOTETRACKINGSTART
+
+%COMMENT = ' Remote Tracking Start'
+%NOLOCKGROUP
+%NOPAUSE=ERROR+COMMAND+TPENABLE
+%NOBUSYLAMP
+
+CONST 	
+	PR_STATIC_TRACK_XYZWPR = 40
+	
+VAR
+
+	rf_ :FILE
+	STATUS: INTEGER
+
+	current_pos: XYZWPR
+
+BEGIN
+	
+	-- set system vars for some reason
+	$GROUP[1].$UTOOL = $MNUTOOL[1,1] --uTool 1
+	$GROUP[1].$UFRAME = $MNUFRAME[1,1] --uFrame 1
+	
+	current_pos = CURPOS(0,0)
+	-- offset slightly to start static tracking with non zero motion
+	current_pos.x = current_pos.x + 0.1
+	current_pos.y = current_pos.y + 0.1
+	current_pos.z = current_pos.z + 0.1
+	current_pos.w = current_pos.w + 0.1
+	current_pos.p = current_pos.p + 0.1
+	current_pos.r = current_pos.r + 0.1
+	
+	OPEN FILE rf_ ('RW', 'RD:RESPONSE.HTM')
+	STATUS = IO_STATUS(rf_)
+	IF (STATUS <> 0) THEN
+		WRITE rf_ ( '{"result":"failed", "reason":',STATUS,'}') 
+		RETURN
+	ENDIF
+	
+	SET_POS_REG(PR_STATIC_TRACK_XYZWPR, current_pos, STATUS)
+	IF (STATUS <> 0 ) THEN	
+		WRITE rf_ ( '{"result":"failed", "reason":',STATUS,'}')				
+	ENDIF
+		
+	-- abort all other movement
+	ABORT_TASK('motion', TRUE, TRUE, STATUS)
+	ABORT_TASK('static_track', TRUE, TRUE, STATUS)
+	
+	-- reset system variables
+	SET_VAR(0, '*SYSTEM*', '$DPM_SCH[1].$GRP[1].$OFS[1].$INI_OFS', 0.0, STATUS)
+	SET_VAR(0, '*SYSTEM*', '$DPM_SCH[1].$GRP[1].$OFS[2].$INI_OFS', 0.0, STATUS)
+	SET_VAR(0, '*SYSTEM*', '$DPM_SCH[1].$GRP[1].$OFS[3].$INI_OFS', 0.0, STATUS)
+	SET_VAR(0, '*SYSTEM*', '$DPM_SCH[1].$GRP[1].$OFS[4].$INI_OFS', 0.0, STATUS)
+	SET_VAR(0, '*SYSTEM*', '$DPM_SCH[1].$GRP[1].$OFS[5].$INI_OFS', 0.0, STATUS)
+	SET_VAR(0, '*SYSTEM*', '$DPM_SCH[1].$GRP[1].$OFS[6].$INI_OFS', 0.0, STATUS)
+	-- start tracking task
+	RUN_TASK( 'static_track', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS )
+	IF (STATUS <> 0 ) THEN	
+		WRITE rf_ ( '{"result":"failed", "reason":',STATUS,'}')				
+	ELSE
+		WRITE rf_ ( '{"result":"success"}')	
+	ENDIF
+	
+	CLOSE FILE rf_
+	
+END REMOTETRACKINGSTART
