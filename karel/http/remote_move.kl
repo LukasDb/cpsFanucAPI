@@ -70,6 +70,8 @@ BEGIN
 	-- abort all other movement
 	ABORT_TASK('motion', TRUE, TRUE, STATUS)
 	ABORT_TASK('static_track', TRUE, TRUE, STATUS)
+	-- yield to be able to aqcuire motion group lock
+	DELAY(10)
 	
 	RUN_TASK( 'motion', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS )
 	
@@ -94,15 +96,10 @@ BEGIN
 	IF (STATUS <> 0 ) THEN	
 		WRITE rf_ ( '{"result":"failed", "reason":',STATUS,'}')				
 	ELSE
-		IF(UNINIT(lin)) THEN
-			-- default movement type is linear
+		IF(STR_TO_BOOL(lin)) THEN
 			FLG[4] = ON
-		ELSE 
-			IF(STR_TO_BOOL(lin)) THEN
-				FLG[4] = ON
-			ELSE
-				FLG[3] = ON
-			ENDIF
+		ELSE
+			FLG[3] = ON
 		ENDIF
 		-- unlock motion task					
 		FLG[7] = ON

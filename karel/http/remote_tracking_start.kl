@@ -45,6 +45,8 @@ BEGIN
 	-- abort all other movement
 	ABORT_TASK('motion', TRUE, TRUE, STATUS)
 	ABORT_TASK('static_track', TRUE, TRUE, STATUS)
+	-- yield to be able to aqcuire motion group lock
+	DELAY(10)
 	
 	-- reset system variables
 	SET_VAR(0, '*SYSTEM*', '$DPM_SCH[1].$GRP[1].$OFS[1].$INI_OFS', 0.0, STATUS)
