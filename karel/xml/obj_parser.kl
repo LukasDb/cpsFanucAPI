@@ -1,5 +1,7 @@
+-- PARSE_OBJ_LIST						... Parse a list of type object_t from XML
+--
 -- Routine Signature description:
-
+--
 -- xml_file: FILE								... File Variable
 --  xml_path: STRING						... File path, needed to open file
 -- entry_buffer: picking_object_t				... Global buffer variable, needed for XML_SCAN subroutine
@@ -7,7 +9,6 @@
 -- prog_name: STRING						... Name of main program,  needed for XML_SCAN subroutine
 -- entry_array: ARRAY[*] OF picking_object_t	... Target array to parse file content into
 -- RETURN: INTEGER						... Number of entries that were filled into target array
-
 ROUTINE  PARSE_OBJ_LIST(
 xml_file: FILE;
  xml_path: STRING;

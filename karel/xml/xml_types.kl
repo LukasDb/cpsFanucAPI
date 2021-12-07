@@ -4,7 +4,8 @@ TYPE
 		id: STRING[32]
 		x: REAL
 		y: REAL
-		dist_2d: REAL
+		bb_x: REAL
+		bb_y: REAL
 	ENDSTRUCTURE
 	
 	picking_point_t = STRUCTURE

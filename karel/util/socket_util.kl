@@ -1,3 +1,9 @@
+-- CONNECT_TO_SERVER		... Establish connection to a server, abstracts KAREL library function
+--
+-- Routine Signature description:
+--
+-- connection_tag : STRING		... KAREL tag to identify system configuration of the socket
+-- socket_file: FILE				... File to handle the open server connection
 ROUTINE CONNECT_TO_SERVER(connection_tag : STRING; socket_file: FILE)
 BEGIN
 	MSG_CONNECT(connection_tag, STATUS)
@@ -7,6 +13,13 @@ BEGIN
 	
 END CONNECT_TO_SERVER
 
+
+-- DISCONNECT_FROM_SERVER	... Close connection to a server, abstracts KAREL library function
+--
+-- Routine Signature description:
+--
+-- connection_tag : STRING		... KAREL tag to identify system configuration of the socket
+-- socket_file: FILE				... File to handle the open server connection
 ROUTINE DISCONNECT_FROM_SERVER(connection_tag : STRING; socket_file: FILE)
 BEGIN
 	CLOSE FILE socket_file --close file first, otherwise msg_disco will abort
@@ -15,14 +28,20 @@ BEGIN
 END DISCONNECT_FROM_SERVER
 
 
-ROUTINE AWAIT_SOCKET(socket_file: FILE; pollrate: INTEGER)
+-- AWAIT_SOCKET			... Active wait until data is received on this socket connection
+--
+-- Routine Signature description:
+--
+-- socket_file: FILE			... File to handle the open server connection
+-- pollrate_ms: INTEGER		... Rate in ms at which routine will poll the socket for new data
+ROUTINE AWAIT_SOCKET(socket_file: FILE; pollrate_ms: INTEGER)
 VAR
 n_bytes: INTEGER
 
 BEGIN
 REPEAT
 	BYTES_AHEAD(socket_file, n_bytes, STATUS)
-	DELAY pollrate -- sleep for x  ms
+	DELAY pollrate_ms -- sleep for x  ms
 UNTIL n_bytes > 0
 
 END AWAIT_SOCKET

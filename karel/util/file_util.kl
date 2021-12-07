@@ -1,3 +1,9 @@
+-- FILE_COPY			... Copy file contents by transmitting chunks of maximum string length (254 characters)
+--
+-- Routine Signature description:
+--
+-- source: FILE			... File to copy contents from
+--  destination: FILE		... File to paste contents into
 ROUTINE FILE_COPY(source: FILE; destination: FILE)
 VAR
 string_buffer: STRING[254] -- maximum string length that can be stored in a variable

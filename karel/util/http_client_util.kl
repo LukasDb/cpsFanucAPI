@@ -1,0 +1,53 @@
+-- MAKE_HTTP_CALL		... Abstracts a HTTP call to a registered server tag
+--
+-- Routine Signature description:
+--
+-- call_string: STRING		... Full HTTP request as string (use  BUILD_PARAM_REQUEST to abstract correct syntax building)
+-- server_tag : STRING		... KAREL tag to identify system configuration of the socket over which the request shall be transmitted
+-- socket_file: FILE			... File that represents the open socket connection
+-- output_file: FILE			... File that stores the HTTP response
+-- output_path: STRING		... Path to initialize output file
+ROUTINE MAKE_HTTP_CALL(call_string: STRING; server_tag : STRING; socket_file: FILE; output_file: FILE; output_path: STRING)
+BEGIN
+	CONNECT_TO_SERVER(server_tag, socket_file) -- establish connection
+	WRITE socket_file(call_string, CR, CR) -- write and flush
+	OPEN FILE output_file('RW', output_path)
+	
+	AWAIT_SOCKET(socket_file, 1) -- active polling
+	FILE_COPY(socket_file, output_file) -- socketFile -> outputFile
+	DISCONNECT_FROM_SERVER(server_tag, socket_file) -- cut connection
+	CLOSE FILE output_file -- close file so it can be reopened with proper modifiers by consumers
+END MAKE_HTTP_CALL
+
+
+-- BUILD_PARAM_REQUEST		... Helper to build a valid HTTP request
+--
+-- Routine Signature description:
+-- 
+-- request_type: STRING				... GET / PUT /  POST / DELETE
+-- endpoint: STRING					... Name of the endpoint on the queried server (without "/" prefix)
+-- keys: ARRAY[*] OF STRING		... HTTP reuqest parameter keys
+-- values: ARRAY[*] OF STRING		... HTTP request parameter values (serialized to strings)
+-- RETURN: STRING				... Full HTTP request as string
+ROUTINE BUILD_PARAM_REQUEST(request_type: STRING; endpoint: STRING; keys: ARRAY[*] OF STRING; values: ARRAY[*] OF STRING): STRING
+VAR
+	request: STRING[254]
+	max_index: INTEGER
+
+BEGIN
+	request = request_type + ' /' + endpoint + '?'
+	
+	-- infer highest iteration index from smaller array
+	IF(ARRAY_LEN(keys) < ARRAY_LEN(values)) THEN 
+		max_index = ARRAY_LEN(keys)
+		ELSE
+		max_index = ARRAY_LEN(values)
+	ENDIF
+	
+FOR i = 1 TO( max_index-1) DO
+	request = request + keys[i] + '=' + values[i] + '&'
+ENDFOR
+request = request + keys[max_index] + '=' + values[max_index]
+	
+RETURN (request)
+END BUILD_PARAM_REQUEST

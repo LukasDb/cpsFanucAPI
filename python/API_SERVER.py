@@ -25,7 +25,8 @@ PP_KEY = "pp"
 PO_LIST_KEY = "obj_list"
 PP_LIST_KEY = "pp_list"
 
-PO_QUALITY_KEY = "dist_2d"
+PO_BOUNDING_BOX_KEY_1 = "bb_x"
+PO_BOUNDING_BOX_KEY_2 = "bb_y"
 PP_QUALITY_KEY = "rot_diff"
 
 error_response = Response(ET.tostring(ET.Element("error"), encoding="ascii", method="xml"), mimetype='text/xml')
@@ -35,23 +36,25 @@ current_idx = 0
 
 
 class PickingObject:
-    def __init__(self, id, position_2d, quality):
-        self.id = str(id)
+    def __init__(self, object_id, position_2d: np.ndarray, bounding_box: np.ndarray):
+        self.object_id = str(object_id)
         self.x = float(position_2d[0])
         self.y = float(position_2d[1])
-        self.quality = quality
+        self.bounding_box = bounding_box
 
     def add_to_xml(self, parent):
-        params = {'id': self.id,
+        params = {'id': self.object_id,
                   'x': str(self.x),
                   'y': str(self.y),
-                  PO_QUALITY_KEY: str(self.quality)}
+                  PO_BOUNDING_BOX_KEY_1: str(self.bounding_box[0]),
+                  PO_BOUNDING_BOX_KEY_2: str(self.bounding_box[1])
+                  }
         ET.SubElement(parent, PO_KEY, params)
 
 
 class PickingPoint:
-    def __init__(self, id, pose_6d, quality):
-        self.id = str(id)
+    def __init__(self, picking_point_id, pose_6d: np.ndarray, quality):
+        self.picking_point_id = str(picking_point_id)
         self.x = float(pose_6d[0])
         self.y = float(pose_6d[1])
         self.z = float(pose_6d[2])
@@ -61,7 +64,7 @@ class PickingPoint:
         self.quality = quality
 
     def add_to_xml(self, parent):
-        params = {'id': self.id,
+        params = {'id': self.picking_point_id,
                   'x': str(self.x),
                   'y': str(self.y),
                   'z': str(self.z),
@@ -72,7 +75,7 @@ class PickingPoint:
         ET.SubElement(parent, PP_KEY, params)
 
     def make_xml(self):
-        params = {'id': self.id,
+        params = {'id': self.picking_point_id,
                   'x': str(self.x),
                   'y': str(self.y),
                   'z': str(self.z),
@@ -122,9 +125,9 @@ class ObjectsEndpoint(Resource):
     def get(self):
 
         pos_2d = np.array([2, 1])
-        distance = np.sqrt(np.square(pos_2d[0])+np.square(pos_2d[1]))
+        bounding_box = np.array([1,1])
 
-        objects = [PickingObject(str(i), pos_2d, distance) for i in range(5)]
+        objects = [PickingObject(str(i), pos_2d, bounding_box) for i in range(5)]
 
         return Response(serialize_picking_objects_xml(objects), mimetype='application/xml')
 
@@ -214,14 +217,14 @@ class TrackPickingPointEndpoint(Resource):
         pose_6d = fake_target_points[current_idx]
 
         # simulate pose estimation jitter
-        dist_scaling = 5
-        rot_scaling = 5
-        pose_6d[0] += (random.random() - 0.5) * dist_scaling
-        pose_6d[1] += (random.random() - 0.5) * dist_scaling
-        pose_6d[2] += (random.random() - 0.5) * dist_scaling
-        pose_6d[3] += (random.random() - 0.5) * rot_scaling
-        pose_6d[4] += (random.random() - 0.5) * rot_scaling
-        pose_6d[5] += (random.random() - 0.5) * rot_scaling
+        #dist_scaling = 5
+        #rot_scaling = 5
+        #pose_6d[0] += (random.random() - 0.5) * dist_scaling
+        #pose_6d[1] += (random.random() - 0.5) * dist_scaling
+        #pose_6d[2] += (random.random() - 0.5) * dist_scaling
+        #pose_6d[3] += (random.random() - 0.5) * rot_scaling
+        #pose_6d[4] += (random.random() - 0.5) * rot_scaling
+        #pose_6d[5] += (random.random() - 0.5) * rot_scaling
 
         offset_6d = np.array([0, 0, 0, 0, 0, 0])
 

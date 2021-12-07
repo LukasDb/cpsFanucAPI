@@ -1,0 +1,46 @@
+-- TIMED_LINEAR_MOVEMENT		... Move TCP linearly to target for specified duration
+--
+-- Routine Signature description:
+--
+-- target_pos: XYZWPR				... Desired target position
+-- timeout_ms: INTEGER				... Timeout in ms after which motion is terminated
+ROUTINE TIMED_LINEAR_MOVEMENT(target_pos: XYZWPR; timeout_ms: INTEGER)
+CONST
+	-- position register associated with motion task
+	PR_XYZWPR = 41
+	
+BEGIN
+    RUN_TASK( 'motion', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS ) -- queue motion task
+    SET_POS_REG(PR_XYZWPR, target_pos, STATUS)	-- set positions register
+	IF (STATUS <> 0 ) THEN		
+	ELSE
+		FLG[4] = ON -- flag 4 sets linear (TCP) interpolation			
+		FLG[7] = ON -- flag 7 starts movement
+	ENDIF
+		DELAY(timeout_ms)
+	ABORT_TASK('motion', TRUE, TRUE, STATUS) -- terminate motion task & associated movement
+END TIMED_LINEAR_MOVEMENT
+
+
+-- TIMED_JOINT_MOVEMENT		... Move TCP in arbitrary trajectory to target for specified duration
+--
+-- Routine Signature description:
+--
+-- target_pos: XYZWPR				... Desired target position
+-- timeout_ms: INTEGER				... Timeout in ms after which motion is terminated
+ROUTINE TIMED_JOINT_MOVEMENT(target_pos: XYZWPR; timeout_ms: INTEGER)
+CONST
+	-- position register associated with motion task
+	PR_XYZWPR = 41
+	
+BEGIN
+    RUN_TASK( 'motion', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS ) -- queue motion task
+    SET_POS_REG(PR_XYZWPR, target_pos, STATUS)	-- set positions register
+	IF (STATUS <> 0 ) THEN		
+	ELSE
+		FLG[3] = ON -- flag 3 sets joint interpolation			
+		FLG[7] = ON -- flag 7 starts movement
+	ENDIF
+		DELAY(timeout_ms)
+	ABORT_TASK('motion', TRUE, TRUE, STATUS) -- terminate motion task & associated movement
+END TIMED_JOINT_MOVEMENT

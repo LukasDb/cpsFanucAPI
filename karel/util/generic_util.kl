@@ -1,3 +1,9 @@
+-- BOOL_TO_STR			... Converts a BOOLEAN value to a STRING
+--
+-- Routine Signature description:
+--
+-- input_bool: BOOLEAN		... Input variable
+-- RETURN: STRING		... {"0";"1"}
 ROUTINE BOOL_TO_STR(input_bool: BOOLEAN): STRING
 BEGIN
 	-- serialize booleans as c-like integers (can be casted in most languages)
@@ -8,6 +14,13 @@ BEGIN
 	ENDIF
 END BOOL_TO_STR
 
+
+-- STR_TO_BOOL			... Convert a STRING to a BOOLEAN value
+--
+-- Routine Signature description:
+--
+-- input_str: STRING			... Input variable
+-- RETURN: BOOLEAN		... {0;1}
 ROUTINE STR_TO_BOOL(input_str: STRING): BOOLEAN
 BEGIN
 	IF((STR_LEN(input_str) = 1) AND (input_str = '1')) THEN
@@ -18,6 +31,13 @@ BEGIN
 	ENDIF
 END STR_TO_BOOL
 
+
+-- REAL_TO_STR		... Convert a REAL value to a STRING, abstracts built in KAREL library function
+--
+-- Routine Signature description:
+--
+-- input_real: REAL		... Input variable
+-- RETURN: STRING	... Float string representation
 ROUTINE REAL_TO_STR(input_real: REAL) : STRING
 VAR
     buffer : STRING[16]
@@ -27,6 +47,15 @@ BEGIN
     RETURN (SUB_STR(buffer, 2, 254))
 END REAL_TO_STR
 
+
+-- REAL_ALMOST_EQUAL	... Compares two REAL values  for equality within a specified error margin
+--
+-- Routine Signature description:
+--
+-- first_real: REAL			... First operand
+-- second_real: REAL		... Second operand
+-- margin: REAL				... Error Margin that results in TRUE
+-- RETURN: BOOLEAN		... Equality within specified margin
 ROUTINE REAL_ALMOST_EQUAL(first_real: REAL; second_real: REAL; margin: REAL): BOOLEAN
 BEGIN
 	IF ((ABS(first_real - second_real)) <= margin) THEN
@@ -36,6 +65,16 @@ BEGIN
 	ENDIF
 END REAL_ALMOST_EQUAL
 
+
+-- XYZWPR_ALMOST_EQUAL	... Compares two XYZWPR values for equality within specified component error margins
+--
+-- Routine Signature description:
+--
+-- first_pos: XYZWPR			... First operand
+-- second_pos: XYZWPR		... Second operand
+-- dist_margin: REAL				... Error margin for position components (XYZ)
+-- rot_margin: REAL				... Error margin for orientation components (WPR)
+-- RETURN: BOOLEAN			... Equality within specified margins
 ROUTINE XYZWPR_ALMOST_EQUAL(first_pos: XYZWPR; second_pos: XYZWPR; dist_margin: REAL; rot_margin: REAL): BOOLEAN
 BEGIN
 	IF(	REAL_ALMOST_EQUAL(first_pos.x, second_pos.x, dist_margin) AND

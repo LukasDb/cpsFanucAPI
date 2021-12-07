@@ -4,9 +4,8 @@ PROGRAM api_client
 %NOPAUSE=ERROR+COMMAND+TPENABLE
 %NOBUSYLAMP
 
-	%INCLUDE types
+	%INCLUDE xml/xml_types
 	%INCLUDE klerxmlf
-
 
 CONST
 	PROGRAM_NAME = 'api_client'
@@ -17,11 +16,6 @@ CONST
 	CONNECTION_TAG = 'C3:'
 	
 	relative_pos = FALSE
-	
-	PR_XYZWPR = 41
-	
-	mm_err_margin = 2
-	angle_err_margin = 2
 
 VAR
 	-- buffers for xml_scan, it needs static variable name as parameter
@@ -62,16 +56,15 @@ VAR
 	
 -- standalone imports
 %INCLUDE util/generic_util
-
--- requires log_util
 %INCLUDE util/socket_util
 %INCLUDE util/file_util
 %INCLUDE util/stopwatch_util
+%INCLUDE util/motion_util
 %INCLUDE xml/obj_parser	
 %INCLUDE xml/pp_parser
 
 -- requires socket_util, file_util
-%INCLUDE util/rest_util
+%INCLUDE util/http_client_util
 
 BEGIN
 
@@ -83,49 +76,19 @@ $GROUP[1].$UFRAME = $MNUFRAME[1,1] --uFrame 1
 ABORT_TASK('motion', TRUE, TRUE, STATUS)
 DISCONNECT_FROM_SERVER(CONNECTION_TAG, socket_file)
 
-current_pos = CURPOS(0,0)
-current_pos.x = current_pos.x + 5
-current_pos.y = current_pos.y + 5
-current_pos.z = current_pos.z + 5
-current_pos.w = current_pos.w + 5
-current_pos.p = current_pos.p + 5
-current_pos.r = current_pos.r + 5
-
-SET_POS_REG(40, current_pos, STATUS)
-
-RUN_TASK( 'static_track', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS ) -- queue motion task
-DELAY(1000)
-SET_VAR(0, '*SYSTEM*', '$DPM_SCH[1].$GRP[1].$OFS[1].$INI_OFS', 5.0, STATUS)
-SET_VAR(0, '*SYSTEM*', '$DPM_SCH[1].$GRP[1].$OFS[2].$INI_OFS', 5.0, STATUS)
-SET_VAR(0, '*SYSTEM*', '$DPM_SCH[1].$GRP[1].$OFS[3].$INI_OFS', 5.0, STATUS)
-WRITE (STATUS, CR)
-DELAY(1000)
-SET_VAR(0, '*SYSTEM*', '$DPM_SCH[1].$GRP[1].$OFS[1].$INI_OFS', -5.0, STATUS)
-SET_VAR(0, '*SYSTEM*', '$DPM_SCH[1].$GRP[1].$OFS[2].$INI_OFS', -5.0, STATUS)
-SET_VAR(0, '*SYSTEM*', '$DPM_SCH[1].$GRP[1].$OFS[3].$INI_OFS', -5.0, STATUS)
-DELAY(1000)
-
-RETURN
-
 ---------------------------
 -- Fetch picking objects
 ---------------------------
 
 query = 'GET /fieldview/objects'
 
-START_TIME(time_rtt)
-MAKE_REST_CALL(query,CONNECTION_TAG, socket_file, pipe_file, pipe_path)
+MAKE_HTTP_CALL(query,CONNECTION_TAG, socket_file, pipe_file, pipe_path)
 
-
-START_TIME(time_xml)
 n = PARSE_OBJ_LIST(pipe_file, pipe_path, obj_buffer, OBJ_BUFFER_NAME, PROGRAM_NAME, obj_array)
 
-
 IF(n = 0) THEN
-
 	RETURN
 ENDIF
-
 
 -- TODO arbitrarily choose last
 target_obj_id = obj_array[n].id
@@ -156,16 +119,11 @@ pp_query_values[8] = REAL_TO_STR(current_pos.r)
 -- 'GET /picking-points?obj_id=0&relative=0&x=0&y=0&z=0&w=0&p=0&r=0'
 query = BUILD_PARAM_REQUEST('GET', 'fieldview/picking-points', pp_query_keys, pp_query_values)
 
-START_TIME(time_rtt)
-MAKE_REST_CALL(query,CONNECTION_TAG, socket_file, pipe_file, pipe_path)
+MAKE_HTTP_CALL(query,CONNECTION_TAG, socket_file, pipe_file, pipe_path)
 
-
-START_TIME(time_xml)
 n = PARSE_PP_LIST(pipe_file, pipe_path, pp_buffer, PP_BUFFER_NAME, PROGRAM_NAME, pp_array)
 
-
 IF(n = 0) THEN
-
 	RETURN
 ENDIF
 
@@ -180,27 +138,13 @@ target_pos.z = pp_array[n].z
 target_pos.w = pp_array[n].w
 target_pos.p = pp_array[n].p
 target_pos.r =  pp_array[n].r
-START_TIME(time_total)
 
 REPEAT
 	---------------------------
 	-- Track selected picking point
 	---------------------------
 
-	RUN_TASK( 'motion', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS ) -- queue motion task
-
-	SET_POS_REG(PR_XYZWPR, target_pos, STATUS)	-- set positions register
-	IF (STATUS <> 0 ) THEN		
-
-	ELSE
-
-		FLG[4] = ON						
-		FLG[7] = ON
-	ENDIF
-	-- TODO polling interval
-	DELAY(1000)
-	ABORT_TASK('motion', TRUE, TRUE, STATUS) -- terminate motion task & associated movement
-	START_TIME(time_total)
+	TIMED_JOINT_MOVEMENT(target_pos, 500)
 
 	-- other query keys remain the same for this endpoint
 	pp_query_keys[1] = 'pp_id'
@@ -219,15 +163,11 @@ REPEAT
 	-- 'GET /picking-points?pp_id=0&relative=0&x=0&y=0&z=0&w=0&p=0&r=0'
 	query = BUILD_PARAM_REQUEST('GET', 'fieldview/track-picking-point', pp_query_keys, pp_query_values)
 	
-	START_TIME(time_rtt)
-	MAKE_REST_CALL(query,CONNECTION_TAG, socket_file, pipe_file, pipe_path)
-
+	MAKE_HTTP_CALL(query,CONNECTION_TAG, socket_file, pipe_file, pipe_path)
 	
-	START_TIME(time_xml)
 	query_success = PARSE_PP_SINGLE(pipe_file, pipe_path, pp_buffer, PP_BUFFER_NAME, PROGRAM_NAME)
 
 	IF(NOT query_success) THEN
-
 		RETURN
 	ENDIF
 
@@ -239,6 +179,7 @@ REPEAT
 	target_pos.w = pp_buffer.w
 	target_pos.p = pp_buffer.p
 	target_pos.r = pp_buffer.r
-UNTIL (FALSE)
+	WRITE('track', CR)
+UNTIL (XYZWPR_ALMOST_EQUAL(target_pos, current_pos, 1, 0.1))
 
 END api_client
