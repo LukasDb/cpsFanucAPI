@@ -22,22 +22,22 @@ VAR
 	loop1: BOOLEAN
 	
 BEGIN
-	SET_VAR(entry, '*SYSTEM*', '$HOSTC_CFG[5].$SERVER_PORT', 8000, status)
+	SET_VAR(entry, '*SYSTEM*', '$HOSTC_CFG[5].$SERVER_PORT', 9000, status)
 	-- Connect the tag
-	WRITE TPDISPLAY('Connecting...', CR)
+	-- WRITE TPDISPLAY('Connecting...', CR)
 	WRITE('Connecting...', CR)
 	MSG_CONNECT('C5:', status)
-	WRITE TPDISPLAY('Connect Status = ', status, CR)
+	-- WRITE TPDISPLAY('Connect Status = ', status, CR)
 	WRITE('Connect Status = ', status, CR)
 	-- loop1 = TRUE
 	IF status = 0 THEN
 	--	WHILE loop1 = TRUE DO
 	--		WRITE('Opening File...',CR)
 		DELAY(5000)
-		WRITE TPDISPLAY('Disconnecting...', CR)
+		-- WRITE TPDISPLAY('Disconnecting...', CR)
 		WRITE('Disconnecting...', CR)
 		MSG_DISCO('C5:', status)
-		WRITE TPDISPLAY('Done', CR)
+		-- WRITE TPDISPLAY('Done', CR)
 		WRITE('Done', CR)
 	ENDIF
 END loopc1

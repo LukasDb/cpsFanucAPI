@@ -1,0 +1,32 @@
+/PROG  GRIPPER_MOVE
+/ATTR
+OWNER   = MNEDITOR;
+COMMENT   = "FDPMMD//r0b";
+PROG_SIZE = 1050;
+CREATE    = DATE 18-01-21  TIME 12:00:00;
+MODIFIED  = DATE 18-01-21  TIME 12:00:00;
+FILE_NAME = ;
+VERSION   = 0;
+LINE_COUNT  = 30;
+MEMORY_SIZE = 1310;
+PROTECT   = READ_WRITE;
+TCD:  STACK_SIZE  = 0,
+      TASK_PRIORITY = 50,
+      TIME_SLICE  = 0,
+      BUSY_LAMP_OFF = 0,
+      ABORT_REQUEST = 0,
+      PAUSE_REQUEST = 0;
+DEFAULT_GROUP = 1,*,*,*,*;
+CONTROL_CODE  = 00000000 00000000;
+/MN
+    :  !Start stat tracking ;
+    : JMP LBL[999] ;
+    : LBL[8] ;
+    : WAIT (F[8])    ;
+    :CALL IPL_ONROBOT_RG_MOVE(R[81], R[82], R[83]);
+    : JMP LBL[666] ;
+    : LBL[999] ;
+    : F[8]=(OFF);
+    : JMP LBL[8];
+    : LBL[666];
+/END

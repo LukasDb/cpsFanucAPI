@@ -1,0 +1,87 @@
+PROGRAM remotegripperinfo
+
+%COMMENT = ' Remote Gripper Info'
+%NOLOCKGROUP
+%NOPAUSE=ERROR+COMMAND+TPENABLE
+%NOBUSYLAMP
+
+CONST
+	R_ABSDEPTH = 91
+	R_RELDEPTH = 92
+	R_WIDTH = 93
+	R_ISBUSY = 94
+	R_ISGRIP = 95
+	R_ISSAFETY = 96
+	R_ISCONNECT = 97
+	R_ISRGTWO = 98
+	R_ISRGSIX = 99
+	
+VAR
+	temp_real: REAL
+	temp_int: INTEGER
+
+	abs_depth: REAL
+	rel_depth: REAL
+	width: REAL
+	
+	is_busy: INTEGER
+	is_grip: INTEGER
+	is_safety: INTEGER
+	is_connect: INTEGER
+	is_rg_two: INTEGER
+	is_rg_six: INTEGER
+
+	rf_ :FILE
+	STATUS: INTEGER
+
+BEGIN	
+	OPEN FILE rf_ ('RW', 'RD:RESPONSE.HTM')
+	STATUS = IO_STATUS(rf_)
+	IF (STATUS <> 0) THEN
+		WRITE rf_ ( '{"result":"failed", "reason":',STATUS,'}') 
+		RETURN
+	ENDIF
+	
+	-- abort current gripper instruction
+	ABORT_TASK('gripper_info', TRUE, TRUE, STATUS)
+	RUN_TASK( 'gripper_info', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS )	
+	
+	FLG[9] = ON -- start gripper info task
+	
+	WRITE rf_ ( '{"result":"success"}')
+
+
+	CLOSE FILE rf_
+	
+	GET_REG(R_ABSDEPTH, TRUE, temp_int, temp_real, STATUS)
+	abs_depth = temp_real
+	GET_REG(R_RELDEPTH, TRUE, temp_int, temp_real, STATUS)
+	rel_depth = temp_real
+	GET_REG(R_WIDTH, TRUE, temp_int, temp_real, STATUS)
+	width= temp_real
+	
+	GET_REG(R_ISBUSY, FALSE, temp_int, temp_real, STATUS)
+	is_busy = temp_int
+	GET_REG(R_ISGRIP, FALSE, temp_int, temp_real, STATUS)
+	is_grip = temp_int
+	GET_REG(R_ISSAFETY, FALSE, temp_int, temp_real, STATUS)
+	is_safety = temp_int
+	GET_REG(R_ISCONNECT, FALSE, temp_int, temp_real, STATUS)
+	is_connect = temp_int
+	GET_REG(R_ISRGTWO, FALSE, temp_int, temp_real, STATUS)
+	is_rg_two = temp_int
+	GET_REG(R_ISRGSIX, FALSE, temp_int, temp_real, STATUS)
+	is_rg_six = temp_int
+	
+	WRITE rf_ (  '{"result":"success"', 
+			', "abs_depth":',abs_depth ,
+			', "rel_depth":',rel_depth ,
+			', "width":', width,
+			', "is_busy":',is_busy ,
+			', "is_grip":',is_grip ,
+			', "is_safety":',is_safety ,
+			', "is_connect":',is_connect ,
+			', "is_rg_two":',is_rg_two ,
+			', "is_rg_six":',is_rg_six ,
+			'}', CR)
+END remotegripperinfo
