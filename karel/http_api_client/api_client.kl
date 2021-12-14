@@ -4,7 +4,7 @@ PROGRAM api_client
 %NOPAUSE=ERROR+COMMAND+TPENABLE
 %NOBUSYLAMP
 
-	%INCLUDE xml/xml_types
+	%INCLUDE ../xml/xml_types
 	%INCLUDE klerxmlf
 
 CONST
@@ -55,16 +55,16 @@ VAR
 	query_success: BOOLEAN
 	
 -- standalone imports
-%INCLUDE util/generic_util
-%INCLUDE util/socket_util
-%INCLUDE util/file_util
-%INCLUDE util/stopwatch_util
-%INCLUDE util/motion_util
-%INCLUDE xml/obj_parser	
-%INCLUDE xml/pp_parser
+%INCLUDE ../util/generic_util
+%INCLUDE  ../util/socket_util
+%INCLUDE  ../util/file_util
+%INCLUDE  ../util/stopwatch_util
+%INCLUDE  ../util/motion_util
+%INCLUDE  ../xml/obj_parser	
+%INCLUDE  ../xml/pp_parser
 
 -- requires socket_util, file_util
-%INCLUDE util/http_client_util
+%INCLUDE  ../util/http_client_util
 
 BEGIN
 
