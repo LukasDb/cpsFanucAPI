@@ -217,14 +217,14 @@ class TrackPickingPointEndpoint(Resource):
         pose_6d = fake_target_points[current_idx]
 
         # simulate pose estimation jitter
-        #dist_scaling = 5
-        #rot_scaling = 5
-        #pose_6d[0] += (random.random() - 0.5) * dist_scaling
-        #pose_6d[1] += (random.random() - 0.5) * dist_scaling
-        #pose_6d[2] += (random.random() - 0.5) * dist_scaling
-        #pose_6d[3] += (random.random() - 0.5) * rot_scaling
-        #pose_6d[4] += (random.random() - 0.5) * rot_scaling
-        #pose_6d[5] += (random.random() - 0.5) * rot_scaling
+        dist_scaling = 5
+        rot_scaling = 5
+        pose_6d[0] += (random.random() - 0.5) * dist_scaling
+        pose_6d[1] += (random.random() - 0.5) * dist_scaling
+        pose_6d[2] += (random.random() - 0.5) * dist_scaling
+        pose_6d[3] += (random.random() - 0.5) * rot_scaling
+        pose_6d[4] += (random.random() - 0.5) * rot_scaling
+        pose_6d[5] += (random.random() - 0.5) * rot_scaling
 
         offset_6d = np.array([0, 0, 0, 0, 0, 0])
 
