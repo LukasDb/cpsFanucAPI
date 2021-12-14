@@ -56,18 +56,19 @@ BEGIN
 	ABORT_TASK('gripper_move', TRUE, TRUE, STATUS)
 	-- yield to be able to aqcuire motion group lock
 	DELAY(10)
-	RUN_TASK( 'gripper_move', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS )
-	
-	FLG[8] = ON -- start gripper move	
-	
 	SET_REAL_REG(R_WIDTH, width_real, STATUS)
 	SET_REAL_REG(R_FORCE, force_real, STATUS)
 	SET_INT_REG(R_WAIT_FLAG, wait_flag_int, STATUS)
-	
 	IF (STATUS <> 0) THEN
 		WRITE rf_ ( '{"result":"failed", "reason":',STATUS,'}') 
 	ELSE
 		WRITE rf_ ( '{"result":"success"}') 
+	ENDIF
+	RUN_TASK( 'gripper_move', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS )
+	DELAY(10) --yield
+	IF (STATUS <> 0) THEN
+		WRITE rf_ ( '{"result":"failed", "reason":',STATUS,'}') 
+		RETURN
 	ENDIF
 
 	CLOSE FILE rf_

@@ -19,14 +19,5 @@ TCD:  STACK_SIZE  = 0,
 DEFAULT_GROUP = 1,*,*,*,*;
 CONTROL_CODE  = 00000000 00000000;
 /MN
-    :  !Start stat tracking ;
-    : JMP LBL[999] ;
-    : LBL[8] ;
-    : WAIT (F[8])    ;
-    :CALL IPL_ONROBOT_RG_MOVE(R[81], R[82], R[83]);
-    : JMP LBL[666] ;
-    : LBL[999] ;
-    : F[8]=(OFF);
-    : JMP LBL[8];
-    : LBL[666];
+    :CALL IPL_OR_RG_MOVE(R[81], R[82], R[83]);
 /END

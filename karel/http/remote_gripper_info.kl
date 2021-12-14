@@ -6,15 +6,13 @@ PROGRAM remotegripperinfo
 %NOBUSYLAMP
 
 CONST
-	R_ABSDEPTH = 91
-	R_RELDEPTH = 92
-	R_WIDTH = 93
-	R_ISBUSY = 94
-	R_ISGRIP = 95
-	R_ISSAFETY = 96
-	R_ISCONNECT = 97
-	R_ISRGTWO = 98
-	R_ISRGSIX = 99
+	R_ABSDEPTH = 71
+	R_RELDEPTH = 72
+	R_WIDTH = 73
+	R_ISBUSY = 74
+	R_ISGRIP = 75
+	R_ISSAFETY = 76
+	R_ISCONNECT = 77
 	
 VAR
 	temp_real: REAL
@@ -28,8 +26,6 @@ VAR
 	is_grip: INTEGER
 	is_safety: INTEGER
 	is_connect: INTEGER
-	is_rg_two: INTEGER
-	is_rg_six: INTEGER
 
 	rf_ :FILE
 	STATUS: INTEGER
@@ -44,14 +40,13 @@ BEGIN
 	
 	-- abort current gripper instruction
 	ABORT_TASK('gripper_info', TRUE, TRUE, STATUS)
-	RUN_TASK( 'gripper_info', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS )	
+	RUN_TASK( 'gripper_info', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS )
+	DELAY(1) --yield
 	
-	FLG[9] = ON -- start gripper info task
-	
-	WRITE rf_ ( '{"result":"success"}')
-
-
-	CLOSE FILE rf_
+	IF (STATUS <> 0) THEN
+		WRITE rf_ ( '{"result":"failed", "reason":',STATUS,'}') 
+		RETURN
+	ENDIF
 	
 	GET_REG(R_ABSDEPTH, TRUE, temp_int, temp_real, STATUS)
 	abs_depth = temp_real
@@ -68,10 +63,6 @@ BEGIN
 	is_safety = temp_int
 	GET_REG(R_ISCONNECT, FALSE, temp_int, temp_real, STATUS)
 	is_connect = temp_int
-	GET_REG(R_ISRGTWO, FALSE, temp_int, temp_real, STATUS)
-	is_rg_two = temp_int
-	GET_REG(R_ISRGSIX, FALSE, temp_int, temp_real, STATUS)
-	is_rg_six = temp_int
 	
 	WRITE rf_ (  '{"result":"success"', 
 			', "abs_depth":',abs_depth ,
@@ -81,7 +72,7 @@ BEGIN
 			', "is_grip":',is_grip ,
 			', "is_safety":',is_safety ,
 			', "is_connect":',is_connect ,
-			', "is_rg_two":',is_rg_two ,
-			', "is_rg_six":',is_rg_six ,
 			'}', CR)
+			
+	CLOSE FILE rf_
 END remotegripperinfo
