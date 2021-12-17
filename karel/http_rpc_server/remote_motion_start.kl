@@ -1,4 +1,4 @@
-PROGRAM remotemotionabort
+PROGRAM remotemotionstart
 
 %COMMENT = 'Remote Motion Abort'
 %NOLOCKGROUP
@@ -7,7 +7,6 @@ PROGRAM remotemotionabort
 VAR
 	rf_ :FILE
 	STATUS: INTEGER
-	current_pos: XYZWPR
 
 BEGIN
 	
@@ -18,8 +17,8 @@ BEGIN
 		WRITE rf_ ( '{"result":"failed", "reason":',STATUS,'}') 
 	ELSE
 		-- terminate all motion tasks
-		ABORT_TASK('motion', TRUE, TRUE, STATUS)
-		ABORT_TASK('static_track', TRUE, TRUE, STATUS)
+		SET_INT_REG(5, 0, STATUS)
+		RUN_TASK( 'motiontwo', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS )
 		-- 3016 is task wasnt even active to begin with
 		IF ((STATUS <> 0) AND (STATUS <> 3016) ) THEN
 			WRITE rf_ ( '{"result":"failed", "reason":',STATUS,'}') 
@@ -28,4 +27,4 @@ BEGIN
 		ENDIF
 	ENDIF
 	CLOSE FILE rf_
-END remotemotionabort
+END remotemotionstart

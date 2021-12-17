@@ -1,0 +1,91 @@
+PROGRAM remotemovetwo
+
+%COMMENT = ' Remote Move'
+%NOLOCKGROUP
+%NOPAUSE=ERROR+COMMAND+TPENABLE
+%NOBUSYLAMP
+
+CONST 	
+	--register id
+	PR_XYZWPR = 1
+	
+VAR
+
+	rf_ :FILE
+	STATUS: INTEGER
+	
+	x: STRING[127]
+	y: STRING[127]
+	z: STRING[127]
+	w: STRING[127]
+	p: STRING[127]
+	r: STRING[127]
+
+	coord: ARRAY[6] OF REAL
+	
+
+	cur_pos: XYZWPR
+	new_pos: XYZWPR
+
+	%INCLUDE ../util/generic_util
+
+BEGIN	
+	OPEN FILE rf_ ('RW', 'RD:RESPONSE.HTM')
+	STATUS = IO_STATUS(rf_)
+	IF (STATUS <> 0) THEN
+		WRITE rf_ ( '{"result":"failed", "reason":',STATUS,'}') 
+		RETURN
+	ENDIF
+	
+	-- check url params (bool flag can be omitted)
+	IF (UNINIT(x) OR 
+		UNINIT(y) OR 
+		UNINIT(z) OR 
+		UNINIT(w) OR 
+		UNINIT(p) OR 
+		UNINIT(r)) THEN
+		WRITE rf_ ( '{"result":"failed", "reason":','uninitialized parameter','}') 
+		RETURN
+	ELSE
+		IF ((x = '') OR
+			(y = '') OR
+			(z = '') OR
+			(w = '') OR
+			(p = '') OR
+			(r = ''))THEN
+			WRITE rf_ ( '{"result":"failed", "reason":','empty parameter','}') 
+			RETURN
+		ENDIF
+	ENDIF
+	
+	-- convert the positions to real numbers
+	CNV_STR_REAL(x, coord[1])
+	CNV_STR_REAL(y, coord[2])
+	CNV_STR_REAL(z, coord[3])
+	CNV_STR_REAL(w, coord[4])
+	CNV_STR_REAL(p, coord[5])
+	CNV_STR_REAL(r, coord[6])
+	
+	$GROUP[1].$UTOOL = $MNUTOOL[1,1] --uTool 1
+	$GROUP[1].$UFRAME = $MNUFRAME[1,1] --uFrame 1
+	cur_pos = CURPOS(0,0);
+	
+	 -- start from old position instance
+	new_pos = cur_pos
+
+	-- overwrite specific values
+	new_pos.x = coord[1]
+	new_pos.y = coord[2]
+	new_pos.z = coord[3]
+	new_pos.w = coord[4]
+	new_pos.p = coord[5]
+	new_pos.r = coord[6]
+	
+	-- set positions register
+	SET_INT_REG(5, 0, STATUS)
+	SET_POS_REG(PR_XYZWPR, new_pos, STATUS)
+	WRITE rf_ ( '{"result":"success"}')
+
+	CLOSE FILE rf_
+	
+END remotemovetwo
