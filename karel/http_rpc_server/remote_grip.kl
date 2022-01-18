@@ -4,73 +4,46 @@ PROGRAM remotegrip
 %NOLOCKGROUP
 %NOPAUSE=ERROR+COMMAND+TPENABLE
 %NOBUSYLAMP
-
-CONST 	
-	R_WIDTH = 81
-	R_FORCE = 82
-	R_WAIT_FLAG = 83
 	
 VAR
 
-	rf_ :FILE
+	response_file :FILE
 	STATUS: INTEGER
 	
 	width: STRING[127]
 	force: STRING[127]
-	wait_flag: STRING[127]
 	
 	width_real: REAL
 	force_real: REAL
-	wait_flag_int: INTEGER
 
 	%INCLUDE ../util/generic_util
+	%INCLUDE ./core_grip
 
 BEGIN	
-	OPEN FILE rf_ ('RW', 'RD:RESPONSE.HTM')
-	STATUS = IO_STATUS(rf_)
+	OPEN FILE response_file ('RW', 'RD:RESPONSE.HTM')
+	STATUS = IO_STATUS(response_file)
 	IF (STATUS <> 0) THEN
-		WRITE rf_ ( '{"result":"failed", "reason":',STATUS,'}') 
 		RETURN
 	ENDIF
 	
-	-- check url params (bool flag can be omitted)
+	-- check url params
 	IF (UNINIT(width) OR 
-		UNINIT(force) OR 
-		UNINIT(wait_flag)) THEN
-		WRITE rf_ ( '{"result":"failed", "reason":','uninitialized parameter','}') 
+		UNINIT(force)) THEN
+		WRITE response_file ( '{"result":"failed", "reason":','uninitialized parameter','}') 
 		RETURN
 	ELSE
 		IF ((width = '') OR
-			(force = '') OR
-			(wait_flag = ''))THEN
-			WRITE rf_ ( '{"result":"failed", "reason":','empty parameter','}') 
+			(force = ''))THEN
+			WRITE response_file ( '{"result":"failed", "reason":','empty parameter','}') 
 			RETURN
 		ENDIF
 	ENDIF
 	
 	CNV_STR_REAL(width, width_real)
 	CNV_STR_REAL(force, force_real)
-	CNV_STR_INT(wait_flag, wait_flag_int)
 	
-	-- abort current gripper instruction
-	ABORT_TASK('gripper_move', TRUE, TRUE, STATUS)
-	-- yield to be able to aqcuire motion group lock
-	DELAY(10)
-	SET_REAL_REG(R_WIDTH, width_real, STATUS)
-	SET_REAL_REG(R_FORCE, force_real, STATUS)
-	SET_INT_REG(R_WAIT_FLAG, wait_flag_int, STATUS)
-	IF (STATUS <> 0) THEN
-		WRITE rf_ ( '{"result":"failed", "reason":',STATUS,'}') 
-	ELSE
-		WRITE rf_ ( '{"result":"success"}') 
-	ENDIF
-	RUN_TASK( 'gripper_move', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS )
-	DELAY(10) --yield
-	IF (STATUS <> 0) THEN
-		WRITE rf_ ( '{"result":"failed", "reason":',STATUS,'}') 
-		RETURN
-	ENDIF
-
-	CLOSE FILE rf_
+	CORE_GRIP(width_real, force_real, response_file)
+	
+	CLOSE FILE  response_file
 	
 END remotegrip

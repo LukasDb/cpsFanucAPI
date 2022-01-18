@@ -5,26 +5,26 @@ PROGRAM remotemotionstart
 %NOBUSYLAMP
 
 VAR
-	rf_ :FILE
+	response_file :FILE
 	STATUS: INTEGER
 
 BEGIN
 	
-	
-	OPEN FILE rf_ ('RW', 'RD:RESPONSE.HTM')
-	STATUS = IO_STATUS(rf_)
+	OPEN FILE response_file ('RW', 'RD:RESPONSE.HTM')
+	STATUS = IO_STATUS(response_file)
 	IF (STATUS <> 0) THEN
-		WRITE rf_ ( '{"result":"failed", "reason":',STATUS,'}') 
-	ELSE
-		-- terminate all motion tasks
-		SET_INT_REG(5, 0, STATUS)
-		RUN_TASK( 'motiontwo', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS )
-		-- 3016 is task wasnt even active to begin with
-		IF ((STATUS <> 0) AND (STATUS <> 3016) ) THEN
-			WRITE rf_ ( '{"result":"failed", "reason":',STATUS,'}') 
-		ELSE
-			WRITE rf_ ( '{"result":"success"}')
-		ENDIF
+		RETURN
 	ENDIF
-	CLOSE FILE rf_
+	
+	-- terminate motion TP task
+	ABORT_TASK('motion_backend', TRUE, TRUE, STATUS)
+	-- start new motion TP task
+	RUN_TASK( 'motion_backend', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS )
+	IF (STATUS <> 0 ) THEN
+		WRITE response_file ( '{"result":"failed", "reason":"Could not start motion_backend TP routine"}') 
+	ELSE
+		WRITE response_file ( '{"result":"success"}')
+	ENDIF
+	
+	CLOSE FILE response_file
 END remotemotionstart

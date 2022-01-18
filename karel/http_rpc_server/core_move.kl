@@ -1,0 +1,48 @@
+ROUTINE CORE_MOVE(coords_6d: ARRAY[*] OF REAL;
+linear_path: BOOLEAN;
+interrupt_current_motion: BOOLEAN;
+response_file: FILE)
+
+CONST
+	PR_XYZWPR = 41
+	R_LIN = 6
+	R_SKIP = 5
+	
+	
+VAR
+	target_pos: XYZWPR
+
+BEGIN	
+	$GROUP[1].$UTOOL = $MNUTOOL[1,1] --uTool 1
+	$GROUP[1].$UFRAME = $MNUFRAME[1,1] --uFrame 1
+	-- start from old position instance
+	target_pos = CURPOS(0,0);
+	
+	-- overwrite specific values
+	target_pos.x = coords_6d[1]
+	target_pos.y = coords_6d[2]
+	target_pos.z = coords_6d[3]
+	target_pos.w = coords_6d[4]
+	target_pos.p = coords_6d[5]
+	target_pos.r = coords_6d[6]
+	
+	IF(interrupt_current_motion) THEN
+		SET_INT_REG(R_SKIP, 1, STATUS)
+	ELSE
+		SET_INT_REG(R_SKIP, 0, STATUS)
+	ENDIF
+	
+	IF(linear_path) THEN
+		SET_INT_REG(R_LIN, 1, STATUS)
+	ELSE
+		SET_INT_REG(R_LIN, 0, STATUS)
+	ENDIF
+	
+	SET_POS_REG(PR_XYZWPR, target_pos, STATUS)
+	IF (STATUS <> 0) THEN
+		WRITE response_file ( '{"result":"failed", "reason":"Could not update target position register"}')
+	ELSE
+		WRITE response_file ( '{"result":"success"}')
+	ENDIF
+	
+END CORE_MOVE

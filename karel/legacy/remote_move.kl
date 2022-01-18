@@ -1,4 +1,4 @@
-PROGRAM remotemovetwo
+PROGRAM remotemove
 
 %COMMENT = ' Remote Move'
 %NOLOCKGROUP
@@ -7,7 +7,7 @@ PROGRAM remotemovetwo
 
 CONST 	
 	--register id
-	PR_XYZWPR = 1
+	PR_XYZWPR = 41
 	
 VAR
 
@@ -20,6 +20,7 @@ VAR
 	w: STRING[127]
 	p: STRING[127]
 	r: STRING[127]
+	lin: STRING[127]
 
 	coord: ARRAY[6] OF REAL
 	
@@ -66,6 +67,14 @@ BEGIN
 	CNV_STR_REAL(p, coord[5])
 	CNV_STR_REAL(r, coord[6])
 	
+	-- abort all other movement
+	ABORT_TASK('motion', TRUE, TRUE, STATUS)
+	ABORT_TASK('static_track', TRUE, TRUE, STATUS)
+	-- yield to be able to aqcuire motion group lock
+	DELAY(10)
+	
+	RUN_TASK( 'motion', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS )
+	
 	$GROUP[1].$UTOOL = $MNUTOOL[1,1] --uTool 1
 	$GROUP[1].$UFRAME = $MNUFRAME[1,1] --uFrame 1
 	cur_pos = CURPOS(0,0);
@@ -82,10 +91,21 @@ BEGIN
 	new_pos.r = coord[6]
 	
 	-- set positions register
-	SET_INT_REG(5, 0, STATUS)
 	SET_POS_REG(PR_XYZWPR, new_pos, STATUS)
-	WRITE rf_ ( '{"result":"success"}')
+	
+	IF (STATUS <> 0 ) THEN	
+		WRITE rf_ ( '{"result":"failed", "reason":',STATUS,'}')				
+	ELSE
+		IF(STR_TO_BOOL(lin)) THEN
+			FLG[4] = ON
+		ELSE
+			FLG[3] = ON
+		ENDIF
+		-- unlock motion task					
+		FLG[7] = ON
+		WRITE rf_ ( '{"result":"success"}')
+	ENDIF
 
 	CLOSE FILE rf_
 	
-END remotemovetwo
+END remotemove

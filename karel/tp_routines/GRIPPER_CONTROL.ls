@@ -1,4 +1,4 @@
-/PROG  GRIPPER_MOVE
+/PROG  GRIPPER_CONTROL
 /ATTR
 OWNER   = MNEDITOR;
 COMMENT   = "OR Gripper Move";
@@ -16,8 +16,9 @@ TCD:  STACK_SIZE  = 0,
       BUSY_LAMP_OFF = 0,
       ABORT_REQUEST = 0,
       PAUSE_REQUEST = 0;
-DEFAULT_GROUP = 1,*,*,*,*;
+DEFAULT_GROUP = *,*,*,*,*;
 CONTROL_CODE  = 00000000 00000000;
 /MN
-    :CALL IPL_OR_RG_MOVE(R[81], R[82], R[83]);
+    :  !set wait flag to 0 as calling KAREL routine is not affected by  it anyways;
+    :  CALL IPL_OR_RG_MOVE(R[81], R[82], 0);
 /END

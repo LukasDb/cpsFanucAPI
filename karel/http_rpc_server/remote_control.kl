@@ -1,15 +1,19 @@
-PROGRAM remotemove
+PROGRAM remotecontrol
 
-%COMMENT = ' Remote Move'
+%COMMENT = ' Remote Control'
 %NOLOCKGROUP
 %NOPAUSE=ERROR+COMMAND+TPENABLE
 %NOBUSYLAMP
-	
-VAR
 
+VAR
 	response_file :FILE
 	STATUS: INTEGER
 	
+	--remote_grip URL params
+	gripper_width: STRING[127]
+	gripper_force: STRING[127]
+	
+	--remote_move URL params
 	x: STRING[127]
 	y: STRING[127]
 	z: STRING[127]
@@ -18,28 +22,38 @@ VAR
 	r: STRING[127]
 	linear_path: STRING[127]
 	interrupt: STRING[127]
-
+	
+	-- remote_grip internal vars
+	width_real: REAL
+	force_real: REAL
+	
+	-- remote_move internal vars
 	coords_6d: ARRAY[6] OF REAL
 	linear_flag: BOOLEAN
 	interrupt_flag: BOOLEAN
-
+	
 	%INCLUDE ../util/generic_util
+	%INCLUDE ./core_gripper_info
+	%INCLUDE ./core_grip
+	%INCLUDE ./core_position
 	%INCLUDE ./core_move
-
-BEGIN	
+	
+BEGIN
 	OPEN FILE response_file ('RW', 'RD:RESPONSE.HTM')
 	STATUS = IO_STATUS(response_file)
 	IF (STATUS <> 0) THEN
 		RETURN
 	ENDIF
 	
-	-- check url params (bool flags can be omitted)
+	-- check url params (bool flag can be omitted)
 	IF (UNINIT(x) OR 
 		UNINIT(y) OR 
 		UNINIT(z) OR 
 		UNINIT(w) OR 
 		UNINIT(p) OR 
-		UNINIT(r)) THEN
+		UNINIT(r) OR
+		UNINIT(gripper_width) OR 
+		UNINIT(gripper_force))THEN
 		WRITE response_file ( '{"result":"failed", "reason":','uninitialized parameter','}') 
 		RETURN
 	ELSE
@@ -48,13 +62,16 @@ BEGIN
 			(z = '') OR
 			(w = '') OR
 			(p = '') OR
-			(r = ''))THEN
+			(r = '') OR
+			(gripper_width = '') OR
+			(gripper_force = ''))THEN
 			WRITE response_file ( '{"result":"failed", "reason":','empty parameter','}') 
 			RETURN
 		ENDIF
 	ENDIF
 	
-	-- convert the positions to real numbers
+	-- REMOTE_MOVE
+	WRITE response_file('{"remote_move":')
 	CNV_STR_REAL(x, coords_6d[1])
 	CNV_STR_REAL(y, coords_6d[2])
 	CNV_STR_REAL(z, coords_6d[3])
@@ -77,5 +94,21 @@ BEGIN
 		
 	CORE_MOVE(coords_6d, linear_flag, interrupt_flag, response_file)
 
+	-- REMOTE_GRIP
+	WRITE response_file(',"remote_grip":')
+	CNV_STR_REAL(gripper_width, width_real)
+	CNV_STR_REAL(gripper_force, force_real)
+	
+	CORE_GRIP(width_real, force_real, response_file)
+	
+	-- REMOTE_GRIPPER_INFO
+	WRITE response_file(',"remote_gripper_info":')
+	CORE_GRIPPER_INFO(response_file)
+	
+	-- REMOTE_POSITION
+	WRITE response_file(',"remote_position":')
+	CORE_POSITION(response_file)
+	
+	WRITE response_file('}')
 	CLOSE FILE response_file
-END remotemove
+END remotecontrol

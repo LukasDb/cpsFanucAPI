@@ -1,0 +1,64 @@
+ROUTINE CORE_GRIPPER_INFO(reponse_file: FILE)
+
+CONST
+	R_ABSDEPTH = 71
+	R_RELDEPTH = 72
+	R_WIDTH = 73
+	R_ISBUSY = 74
+	R_ISGRIP = 75
+	R_ISSAFETY = 76
+	R_ISCONNECT = 77
+	
+VAR
+	temp_real: REAL
+	temp_int: INTEGER
+
+	abs_depth: REAL
+	rel_depth: REAL
+	width: REAL
+	
+	is_busy: INTEGER
+	is_grip: INTEGER
+	is_safety: INTEGER
+	is_connect: INTEGER
+
+BEGIN
+	
+	-- abort current TP process
+	ABORT_TASK('gripper_info', TRUE, TRUE, STATUS)
+	RUN_TASK( 'gripper_info', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS )
+	DELAY(1) --yield to let TP fill registers
+	
+	IF (STATUS <> 0) THEN
+		WRITE response_file( '{"result":"failed", "reason":"Could not start gripper_info TP routine"}')
+		RETURN
+	ENDIF
+	
+	-- ignore status here for performance reasons
+	GET_REG(R_ABSDEPTH, TRUE, temp_int, temp_real, STATUS)
+	abs_depth = temp_real
+	GET_REG(R_RELDEPTH, TRUE, temp_int, temp_real, STATUS)
+	rel_depth = temp_real
+	GET_REG(R_WIDTH, TRUE, temp_int, temp_real, STATUS)
+	width= temp_real
+	
+	GET_REG(R_ISBUSY, FALSE, temp_int, temp_real, STATUS)
+	is_busy = temp_int
+	GET_REG(R_ISGRIP, FALSE, temp_int, temp_real, STATUS)
+	is_grip = temp_int
+	GET_REG(R_ISSAFETY, FALSE, temp_int, temp_real, STATUS)
+	is_safety = temp_int
+	GET_REG(R_ISCONNECT, FALSE, temp_int, temp_real, STATUS)
+	is_connect = temp_int
+	
+	WRITE response_file(  '{"result":"success"',
+			', "abs_depth":', abs_depth,
+			', "rel_depth":', rel_depth,
+			', "width":', width,
+			', "is_busy":', is_busy,
+			', "is_grip":', is_grip,
+			', "is_safety":', is_safety,
+			', "is_connect":', is_connect,
+			'}')
+			
+END CORE_GRIPPER_INFO
