@@ -24,7 +24,7 @@ VAR
 	interrupt_flag: BOOLEAN
 
 	%INCLUDE ../util/generic_util
-	%INCLUDE ./core_move
+	%INCLUDE ../core/core_move
 
 BEGIN	
 	OPEN FILE response_file ('RW', 'RD:RESPONSE.HTM')
@@ -75,7 +75,7 @@ BEGIN
 		interrupt_flag = STR_TO_BOOL(interrupt)
 	ENDIF
 		
-	CORE_MOVE(coords_6d, linear_flag, interrupt_flag, response_file)
+	WRITE response_file(CORE_MOVE(coords_6d, linear_flag, interrupt_flag))
 
 	CLOSE FILE response_file
 END remotemove

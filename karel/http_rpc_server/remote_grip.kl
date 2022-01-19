@@ -17,7 +17,7 @@ VAR
 	force_real: REAL
 
 	%INCLUDE ../util/generic_util
-	%INCLUDE ./core_grip
+	%INCLUDE ../core/core_grip
 
 BEGIN	
 	OPEN FILE response_file ('RW', 'RD:RESPONSE.HTM')
@@ -42,7 +42,7 @@ BEGIN
 	CNV_STR_REAL(width, width_real)
 	CNV_STR_REAL(force, force_real)
 	
-	CORE_GRIP(width_real, force_real, response_file)
+	WRITE response_file(CORE_GRIP(width_real, force_real))
 	
 	CLOSE FILE  response_file
 	

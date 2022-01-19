@@ -1,4 +1,4 @@
-ROUTINE CORE_GRIP(width: REAL; force: REAL; response_file: FILE)
+ROUTINE CORE_GRIP(width: REAL; force: REAL): STRING
 
 CONST 	
 	R_WIDTH = 81
@@ -12,17 +12,17 @@ BEGIN
 	SET_REAL_REG(R_FORCE, force_real, STATUS)
 	
 	IF (STATUS <> 0) THEN
-		WRITE response_file ( '{"result":"failed", "reason":"Could not set gripper register "}')
-		RETURN
+		RETURN ( '{"result":"failed", "reason":"Could not set gripper register "}')
+		
 	ENDIF
 	
 	RUN_TASK( 'gripper_control', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS )
 	-- DELAY(1)
 	
 	IF (STATUS <> 0) THEN
-		WRITE response_file ( '{"result":"failed", "reason":"Could not start gripper_control TP routine"}') 
+		RETURN ( '{"result":"failed", "reason":"Could not start gripper_control TP routine"}') 
 	ELSE
-		WRITE response_file ( '{"result":"success"}') 
+		RETURN ( '{"result":"success"}') 
 	ENDIF
 	
 END CORE_GRIP

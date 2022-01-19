@@ -18,6 +18,9 @@ CONST
 	relative_pos = FALSE
 
 VAR
+	dump: STRING[32]
+	coords_6d: ARRAY[6] OF REAL
+
 	-- buffers for xml_scan, it needs static variable name as parameter
 	obj_buffer: picking_object_t
 	pp_buffer: picking_point_t
@@ -59,9 +62,9 @@ VAR
 %INCLUDE  ../util/socket_util
 %INCLUDE  ../util/file_util
 %INCLUDE  ../util/stopwatch_util
-%INCLUDE  ../util/motion_util
 %INCLUDE  ../xml/obj_parser	
 %INCLUDE  ../xml/pp_parser
+%INCLUDE ../core/core_move
 
 -- requires socket_util, file_util
 %INCLUDE  ../util/http_client_util
@@ -73,7 +76,11 @@ $GROUP[1].$UTOOL = $MNUTOOL[1,1] --uTool 1
 $GROUP[1].$UFRAME = $MNUFRAME[1,1] --uFrame 1
 
 -- reset in case previous execution was faulty
-ABORT_TASK('motion', TRUE, TRUE, STATUS)
+-- terminate motion TP task
+ABORT_TASK('motion_backend', TRUE, TRUE, STATUS)
+DELAY(1000) -- yield to be able to restart TP routine
+-- start new motion TP task
+RUN_TASK( 'motion_backend', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS )
 DISCONNECT_FROM_SERVER(CONNECTION_TAG, socket_file)
 
 ---------------------------
@@ -139,12 +146,21 @@ target_pos.w = pp_array[n].w
 target_pos.p = pp_array[n].p
 target_pos.r =  pp_array[n].r
 
+-- set target position
+coords_6d[1] =  pp_array[n].x
+coords_6d[2] =  pp_array[n].y
+coords_6d[3] = pp_array[n].z
+coords_6d[4] = pp_array[n].w
+coords_6d[5] = pp_array[n].p
+coords_6d[6] =  pp_array[n].r
+
 REPEAT
 	---------------------------
 	-- Track selected picking point
 	---------------------------
-
-	TIMED_JOINT_MOVEMENT(target_pos, 500)
+	
+	dump = CORE_MOVE(coords_6d, TRUE, TRUE)
+	DELAY(500)
 
 	-- other query keys remain the same for this endpoint
 	pp_query_keys[1] = 'pp_id'
@@ -179,6 +195,14 @@ REPEAT
 	target_pos.w = pp_buffer.w
 	target_pos.p = pp_buffer.p
 	target_pos.r = pp_buffer.r
+	
+	-- set target position
+	coords_6d[1] =  pp_buffer.x
+	coords_6d[2] =  pp_buffer.y
+	coords_6d[3] =  pp_buffer.z
+	coords_6d[4] = pp_buffer.w
+	coords_6d[5] =  pp_buffer.p
+	coords_6d[6] =  pp_buffer.r
 	WRITE('track', CR)
 UNTIL (XYZWPR_ALMOST_EQUAL(target_pos, current_pos, 1, 0.1))
 

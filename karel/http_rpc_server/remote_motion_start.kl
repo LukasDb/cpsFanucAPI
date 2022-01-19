@@ -18,6 +18,7 @@ BEGIN
 	
 	-- terminate motion TP task
 	ABORT_TASK('motion_backend', TRUE, TRUE, STATUS)
+	DELAY(1000) -- yield to be able to restart TP routine
 	-- start new motion TP task
 	RUN_TASK( 'motion_backend', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS )
 	IF (STATUS <> 0 ) THEN

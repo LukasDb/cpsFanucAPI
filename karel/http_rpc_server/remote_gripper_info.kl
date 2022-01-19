@@ -9,7 +9,7 @@ VAR
 	response_file :FILE
 	STATUS: INTEGER
 	
-	%INCLUDE ./core_gripper_info
+	%INCLUDE ../core/core_gripper_info
 
 BEGIN	
 	OPEN FILE response_file ('RW', 'RD:RESPONSE.HTM')

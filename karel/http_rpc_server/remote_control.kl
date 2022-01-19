@@ -33,10 +33,10 @@ VAR
 	interrupt_flag: BOOLEAN
 	
 	%INCLUDE ../util/generic_util
-	%INCLUDE ./core_gripper_info
-	%INCLUDE ./core_grip
-	%INCLUDE ./core_position
-	%INCLUDE ./core_move
+	%INCLUDE ../core/core_gripper_info
+	%INCLUDE ../core/core_grip
+	%INCLUDE ../core/core_position
+	%INCLUDE ../core/core_move
 	
 BEGIN
 	OPEN FILE response_file ('RW', 'RD:RESPONSE.HTM')
@@ -92,14 +92,14 @@ BEGIN
 		interrupt_flag = STR_TO_BOOL(interrupt)
 	ENDIF
 		
-	CORE_MOVE(coords_6d, linear_flag, interrupt_flag, response_file)
+	WRITE response_file(CORE_MOVE(coords_6d, linear_flag, interrupt_flag))
 
 	-- REMOTE_GRIP
 	WRITE response_file(',"remote_grip":')
 	CNV_STR_REAL(gripper_width, width_real)
 	CNV_STR_REAL(gripper_force, force_real)
 	
-	CORE_GRIP(width_real, force_real, response_file)
+	WRITE response_file(CORE_GRIP(width_real, force_real))
 	
 	-- REMOTE_GRIPPER_INFO
 	WRITE response_file(',"remote_gripper_info":')

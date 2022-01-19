@@ -1,7 +1,6 @@
 ROUTINE CORE_MOVE(coords_6d: ARRAY[*] OF REAL;
 linear_path: BOOLEAN;
-interrupt_current_motion: BOOLEAN;
-response_file: FILE)
+interrupt_current_motion: BOOLEAN): STRING
 
 CONST
 	PR_XYZWPR = 41
@@ -40,9 +39,9 @@ BEGIN
 	
 	SET_POS_REG(PR_XYZWPR, target_pos, STATUS)
 	IF (STATUS <> 0) THEN
-		WRITE response_file ( '{"result":"failed", "reason":"Could not update target position register"}')
+		RETURN( '{"result":"failed", "reason":"Could not update target position register"}')
 	ELSE
-		WRITE response_file ( '{"result":"success"}')
+		RETURN( '{"result":"success"}')
 	ENDIF
 	
 END CORE_MOVE
