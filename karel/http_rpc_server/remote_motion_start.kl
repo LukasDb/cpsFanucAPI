@@ -7,6 +7,10 @@ PROGRAM remotemotionstart
 VAR
 	response_file :FILE
 	STATUS: INTEGER
+	hs: STRING[127]
+	hs_flag: BOOLEAN
+	
+	%INCLUDE ../util/generic_util
 
 BEGIN
 	
@@ -18,9 +22,22 @@ BEGIN
 	
 	-- terminate motion TP task
 	ABORT_TASK('motion_backend', TRUE, TRUE, STATUS)
+	ABORT_TASK('hs_motion_backend', TRUE, TRUE, STATUS)
 	DELAY(1000) -- yield to be able to restart TP routine
 	-- start new motion TP task
-	RUN_TASK( 'motion_backend', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS )
+	
+	IF(UNINIT(hs)) THEN
+		hs_flag = FALSE
+	ELSE
+		hs_flag = STR_TO_BOOL(hs)
+	ENDIF
+	
+	IF(hs_flag) THEN
+		RUN_TASK( 'hs_motion_backend', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS )
+	ELSE
+		RUN_TASK( 'motion_backend', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS )
+	ENDIF
+	
 	IF (STATUS <> 0 ) THEN
 		WRITE response_file ( '{"result":"failed", "reason":"Could not start motion_backend TP routine"}') 
 	ELSE

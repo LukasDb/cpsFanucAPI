@@ -17,6 +17,7 @@ BEGIN
 	ENDIF
 	
 	-- terminate motion TP task
+	ABORT_TASK('hs_motion_backend', TRUE, TRUE, STATUS)
 	ABORT_TASK('motion_backend', TRUE, TRUE, STATUS)
 	-- 3016 is task wasnt even active to begin with
 	IF ((STATUS <> 0) AND (STATUS <> 3016) ) THEN
