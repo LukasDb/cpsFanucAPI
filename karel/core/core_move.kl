@@ -1,7 +1,6 @@
-ROUTINE CORE_MOVE(coords_6d: ARRAY[*] OF REAL;
+ROUTINE UPDATE_MOTION_BACKEND(target_pos: XYZWPR;
 linear_path: BOOLEAN;
-interrupt_current_motion: BOOLEAN;
-response_file: FILE)
+interrupt_current_motion: BOOLEAN)
 
 CONST
 	PR_XYZWPR = 41
@@ -10,9 +9,35 @@ CONST
 	R_SKIP = 5
 	R_NEW = 7
 	
+BEGIN
+	
+IF(interrupt_current_motion) THEN
+		SET_INT_REG(R_SKIP, 1, STATUS)
+	ELSE
+		SET_INT_REG(R_SKIP, 0, STATUS)
+	ENDIF
+	
+	IF(linear_path) THEN
+		SET_INT_REG(R_LIN, 1, STATUS)
+	ELSE
+		SET_INT_REG(R_LIN, 0, STATUS)
+	ENDIF
+	
+	SET_POS_REG(PR_XYZWPR, target_pos, STATUS)
+	SET_INT_REG(R_NEW, 1, STATUS)
+
+END UPDATE_MOTION_BACKEND
+
+ROUTINE CORE_MOVE(coords_6d: ARRAY[*] OF REAL;
+linear_path: BOOLEAN;
+interrupt_current_motion: BOOLEAN;
+response_file: FILE)
+	
 VAR
 	target_pos: XYZWPR
 	current_pos: XYZWPR
+	temp_int: INTEGER
+	temp_real: REAL
 
 BEGIN	
 	$GROUP[1].$UTOOL = $MNUTOOL[1,1] --uTool 1
@@ -29,24 +54,12 @@ BEGIN
 	target_pos.p = coords_6d[5]
 	target_pos.r = coords_6d[6]
 	
-	IF(interrupt_current_motion) THEN
-		SET_INT_REG(R_SKIP, 1, STATUS)
-	ELSE
-		SET_INT_REG(R_SKIP, 0, STATUS)
-	ENDIF
-	
-	IF(linear_path) THEN
-		SET_INT_REG(R_LIN, 1, STATUS)
-	ELSE
-		SET_INT_REG(R_LIN, 0, STATUS)
-	ENDIF
-	
-	SET_POS_REG(PR_XYZWPR, target_pos, STATUS)
-	SET_INT_REG(R_NEW, 1, STATUS)
+	UPDATE_MOTION_BACKEND(target_pos, linear_path, interrupt_current_motion)
 
 	IF (STATUS <> 0) THEN
 		WRITE response_file ( '{"result":"failed", "reason":"Could not update target position register"}')
 	ELSE
+		GET_REG(8, FALSE, temp_int, temp_real, STATUS)
 		WRITE response_file (  '{"result":"success"', 
 				', "x":', current_pos.x,
 				', "y":', current_pos.y,
@@ -54,7 +67,9 @@ BEGIN
 				', "w":', current_pos.w,
 				', "p":', current_pos.p,
 				', "r":', current_pos.r,
+				', "count":', temp_int,
 				'}')
 	ENDIF
 	
 END CORE_MOVE
+

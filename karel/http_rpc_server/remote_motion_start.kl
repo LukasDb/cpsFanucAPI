@@ -33,6 +33,7 @@ BEGIN
 	ENDIF
 	
 	IF(hs_flag) THEN
+		SET_INT_REG(8, 0, STATUS)
 		RUN_TASK( 'hs_motion_backend', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS )
 	ELSE
 		RUN_TASK( 'motion_backend', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS )

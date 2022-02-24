@@ -1,4 +1,4 @@
--- MAKE_HTTP_CALL		... Abstracts a HTTP call to a registered server tag
+-- MAKE_HTTP_REQUEST		... Abstracts a HTTP request to a registered server tag
 --
 -- Routine Signature description:
 --
@@ -7,7 +7,7 @@
 -- socket_file: FILE			... File that represents the open socket connection
 -- output_file: FILE			... File that stores the HTTP response
 -- output_path: STRING		... Path to initialize output file
-ROUTINE MAKE_HTTP_CALL(call_string: STRING; server_tag : STRING; socket_file: FILE; output_file: FILE; output_path: STRING)
+ROUTINE MAKE_HTTP_REQUEST(call_string: STRING; server_tag : STRING; socket_file: FILE; output_file: FILE; output_path: STRING)
 BEGIN
 	CONNECT_TO_SERVER(server_tag, socket_file) -- establish connection
 	WRITE socket_file(call_string, CR, CR) -- write and flush
@@ -17,7 +17,7 @@ BEGIN
 	FILE_COPY(socket_file, output_file) -- socketFile -> outputFile
 	DISCONNECT_FROM_SERVER(server_tag, socket_file) -- cut connection
 	CLOSE FILE output_file -- close file so it can be reopened with proper modifiers by consumers
-END MAKE_HTTP_CALL
+END MAKE_HTTP_REQUEST
 
 
 -- BUILD_PARAM_REQUEST		... Helper to build a valid HTTP request

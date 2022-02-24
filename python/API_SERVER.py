@@ -25,9 +25,9 @@ PP_KEY = "pp"
 PO_LIST_KEY = "obj_list"
 PP_LIST_KEY = "pp_list"
 
-PO_BOUNDING_BOX_KEY_1 = "bb_x"
-PO_BOUNDING_BOX_KEY_2 = "bb_y"
-PP_QUALITY_KEY = "rot_diff"
+
+PO_QUALITY_KEYS = ["bb_x", "bb_y"]
+PP_QUALITY_KEYS = ["rot_diff", "dist"]
 
 error_response = Response(ET.tostring(ET.Element("error"), encoding="ascii", method="xml"), mimetype='text/xml')
 
@@ -36,24 +36,28 @@ current_idx = 0
 
 
 class PickingObject:
-    def __init__(self, object_id, position_2d: np.ndarray, bounding_box: np.ndarray):
+    def __init__(self, object_id, position_2d: np.ndarray, quality: np.ndarray):
         self.object_id = str(object_id)
         self.x = float(position_2d[0])
         self.y = float(position_2d[1])
-        self.bounding_box = bounding_box
+        self.quality = quality
 
-    def add_to_xml(self, parent):
+    def generate_xml_params(self):
         params = {'id': self.object_id,
                   'x': str(self.x),
-                  'y': str(self.y),
-                  PO_BOUNDING_BOX_KEY_1: str(self.bounding_box[0]),
-                  PO_BOUNDING_BOX_KEY_2: str(self.bounding_box[1])
+                  'y': str(self.y)
                   }
-        ET.SubElement(parent, PO_KEY, params)
+        n_quality = min(len(PO_QUALITY_KEYS), len(self.quality))
+        for i in range(n_quality):
+            params[PO_QUALITY_KEYS[i]] = str(self.quality[i])
+        return params
+
+    def add_to_xml(self, parent):
+        ET.SubElement(parent, PO_KEY, self.generate_xml_params())
 
 
 class PickingPoint:
-    def __init__(self, picking_point_id, pose_6d: np.ndarray, quality):
+    def __init__(self, picking_point_id, pose_6d: np.ndarray, quality: np.ndarray):
         self.picking_point_id = str(picking_point_id)
         self.x = float(pose_6d[0])
         self.y = float(pose_6d[1])
@@ -63,27 +67,24 @@ class PickingPoint:
         self.r = float(pose_6d[5])
         self.quality = quality
 
-    def add_to_xml(self, parent):
+    def generate_xml_params(self):
         params = {'id': self.picking_point_id,
                   'x': str(self.x),
                   'y': str(self.y),
                   'z': str(self.z),
                   'w': str(self.w),
                   'p': str(self.p),
-                  'r': str(self.r),
-                  PP_QUALITY_KEY: str(self.quality)}
-        ET.SubElement(parent, PP_KEY, params)
+                  'r': str(self.r)}
+        n_quality = min(len(PP_QUALITY_KEYS), len(self.quality))
+        for i in range(n_quality):
+            params[PP_QUALITY_KEYS[i]] = str(self.quality[i])
+        return params
+
+    def add_to_xml(self, parent):
+        ET.SubElement(parent, PP_KEY, self.generate_xml_params())
 
     def make_xml(self):
-        params = {'id': self.picking_point_id,
-                  'x': str(self.x),
-                  'y': str(self.y),
-                  'z': str(self.z),
-                  'w': str(self.w),
-                  'p': str(self.p),
-                  'r': str(self.r),
-                  PP_QUALITY_KEY: str(self.quality)}
-        return ET.Element(PP_KEY, params)
+        return ET.Element(PP_KEY, self.generate_xml_params())
 
 
 def serialize_picking_objects_xml(picking_objects: [PickingObject]):
@@ -115,6 +116,15 @@ def calc_rotation_delta(*, current, target):
             total_delta += calc_degree_delta(alpha=current[i], beta=target[i])
 
     return total_delta
+
+def calc_distance(*, current, target):
+    distance = 0
+
+    # check if same dimensions
+    if len(current) == 3 and len(target) == 3:
+        return np.linalg.norm(np.array(target)-np.array(current))
+
+    return distance
 
 
 # --------------------------------------------------------------------------
@@ -186,9 +196,10 @@ class PickingPointsEndpoint(Resource):
                 args['r']])
 
         rotation_delta = calc_rotation_delta(current=pose_6d[3:], target=offset_6d[3:])
+        distance = calc_distance(current=pose_6d[:3], target=offset_6d[:3])
         corrected_pose_6d = pose_6d - offset_6d
 
-        pps = [PickingPoint(str(i), corrected_pose_6d, rotation_delta) for i in range(5)]
+        pps = [PickingPoint(str(i), corrected_pose_6d, [rotation_delta, distance]) for i in range(5)]
 
         return Response(serialize_picking_points_xml(pps), mimetype='application/xml')
 
@@ -239,9 +250,10 @@ class TrackPickingPointEndpoint(Resource):
                 args['r']])
 
         rotation_delta = calc_rotation_delta(current=pose_6d[3:], target=offset_6d[3:])
+        distance = calc_distance(current=pose_6d[:3], target=offset_6d[:3])
         corrected_pose_6d = pose_6d - offset_6d
 
-        pp = PickingPoint(str(0), corrected_pose_6d, rotation_delta)
+        pp = PickingPoint(str(0), corrected_pose_6d, [rotation_delta, distance])
 
         return Response(ET.tostring(pp.make_xml(), encoding="ascii", method="xml"), mimetype='application/xml')
         #return error_response
