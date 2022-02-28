@@ -1,0 +1,22 @@
+ROUTINE CORE_MOTION_START(hs_flag: BOOLEAN): INTEGER
+
+VAR
+
+	STATUS: INTEGER
+	
+BEGIN		
+		-- terminate motion TP task
+	ABORT_TASK('motion_backend', TRUE, TRUE, STATUS)
+	ABORT_TASK('hs_motion_backend', TRUE, TRUE, STATUS)
+	DELAY(1000) -- delay to be able to restart TP routine without fault
+	
+	-- start new motion TP task
+	IF(hs_flag) THEN
+		RUN_TASK( 'hs_motion_backend', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS )
+	ELSE
+		RUN_TASK( 'motion_backend', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS )
+	ENDIF
+	
+	RETURN (STATUS)
+	
+END CORE_MOTION_START

@@ -5,6 +5,10 @@
 -- connection_tag : STRING		... KAREL tag to identify system configuration of the socket
 -- socket_file: FILE				... File to handle the open server connection
 ROUTINE CONNECT_TO_SERVER(connection_tag : STRING; socket_file: FILE)
+
+VAR
+	STATUS: INTEGER
+	
 BEGIN
 	MSG_CONNECT(connection_tag, STATUS)
 
@@ -21,6 +25,10 @@ END CONNECT_TO_SERVER
 -- connection_tag : STRING		... KAREL tag to identify system configuration of the socket
 -- socket_file: FILE				... File to handle the open server connection
 ROUTINE DISCONNECT_FROM_SERVER(connection_tag : STRING; socket_file: FILE)
+
+VAR
+	STATUS: INTEGER
+	
 BEGIN
 	CLOSE FILE socket_file --close file first, otherwise msg_disco will abort
 	MSG_DISCO(connection_tag, STATUS) -- can fail if no current connection, don't catch error
@@ -37,6 +45,7 @@ END DISCONNECT_FROM_SERVER
 ROUTINE AWAIT_SOCKET(socket_file: FILE; pollrate_ms: INTEGER)
 VAR
 n_bytes: INTEGER
+STATUS: INTEGER
 
 BEGIN
 REPEAT

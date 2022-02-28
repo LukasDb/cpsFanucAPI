@@ -1,0 +1,15 @@
+ROUTINE CORE_MOTION_ABORT: INTEGER
+
+VAR
+
+	STATUS: INTEGER
+	
+BEGIN
+	
+	-- terminate motion TP task
+	ABORT_TASK('hs_motion_backend', TRUE, TRUE, STATUS)
+	ABORT_TASK('motion_backend', TRUE, TRUE, STATUS)
+	
+	RETURN (STATUS)
+	
+END CORE_MOTION_ABORT

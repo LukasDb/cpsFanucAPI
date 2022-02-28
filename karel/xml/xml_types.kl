@@ -8,7 +8,7 @@ TYPE
 		bb_y: REAL
 	ENDSTRUCTURE
 	
-	picking_point_t = STRUCTURE
+	picking_pose_t = STRUCTURE
 		id: STRING[32]
 		x: REAL --mm
 		y: REAL --mm

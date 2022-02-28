@@ -10,7 +10,8 @@ VAR
 	hs: STRING[127]
 	hs_flag: BOOLEAN
 	
-	%INCLUDE ../util/generic_util
+%INCLUDE ../util/generic_util
+%INCLUDE ../core/core_motion_start
 
 BEGIN
 	
@@ -32,12 +33,8 @@ BEGIN
 		hs_flag = STR_TO_BOOL(hs)
 	ENDIF
 	
-	IF(hs_flag) THEN
-		SET_INT_REG(8, 0, STATUS)
-		RUN_TASK( 'hs_motion_backend', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS )
-	ELSE
-		RUN_TASK( 'motion_backend', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS )
-	ENDIF
+	SET_INT_REG(8, 0, STATUS)
+	STATUS = CORE_MOTION_START(hs_flag)
 	
 	IF (STATUS <> 0 ) THEN
 		WRITE response_file ( '{"result":"failed", "reason":"Could not start motion_backend TP routine"}') 

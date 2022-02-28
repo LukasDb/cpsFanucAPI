@@ -8,6 +8,8 @@ VAR
 	response_file :FILE
 	STATUS: INTEGER
 
+%INCLUDE ../core/core_motion_abort
+
 BEGIN
 	
 	OPEN FILE response_file ('RW', 'RD:RESPONSE.HTM')
@@ -16,9 +18,8 @@ BEGIN
 		RETURN
 	ENDIF
 	
-	-- terminate motion TP task
-	ABORT_TASK('hs_motion_backend', TRUE, TRUE, STATUS)
-	ABORT_TASK('motion_backend', TRUE, TRUE, STATUS)
+	STATUS = CORE_MOTION_ABORT
+	
 	-- 3016 is task wasnt even active to begin with
 	IF ((STATUS <> 0) AND (STATUS <> 3016) ) THEN
 		WRITE response_file ( '{"result":"failed", "reason":"Could not terminate motion_backend TP routine"}') 

@@ -8,6 +8,7 @@ ROUTINE FILE_COPY(source: FILE; destination: FILE)
 VAR
 string_buffer: STRING[254] -- maximum string length that can be stored in a variable
 n_bytes: INTEGER
+STATUS: INTEGER
 
 BEGIN
 BYTES_AHEAD(source, n_bytes, STATUS) -- initialize nBytes

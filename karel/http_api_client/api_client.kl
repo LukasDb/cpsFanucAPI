@@ -4,87 +4,79 @@ PROGRAM api_client
 %NOPAUSE=ERROR+COMMAND+TPENABLE
 %NOBUSYLAMP
 
-	%INCLUDE ../xml/xml_types
-	%INCLUDE klerxmlf
+-- type definitions in seperate file
+%INCLUDE ../xml/xml_types
+-- KAREL built-in xml routines
+%INCLUDE klerxmlf
 
 CONST
+
+	-- variable names as stings (required for xml parsing)
 	PROGRAM_NAME = 'api_client'
-	-- global ID's of buffer variables below
 	PP_BUFFER_NAME = 'pp_buffer'
 	OBJ_BUFFER_NAME = 'obj_buffer'
+	
 	pipe_path = 'PIP:pipe.dt'
 	CONNECTION_TAG = 'C3:'
 	
 	relative_pos = FALSE
 
 VAR
+
 	coords_6d: ARRAY[6] OF REAL
 
-	-- buffers for xml_scan, it needs static variable name as parameter
+	-- buffers for xml parsing, named according to consts above
 	obj_buffer: picking_object_t
-	pp_buffer: picking_point_t
+	pp_buffer: picking_pose_t
 
+	-- array of fixed length for storage of API response data
 	obj_array: ARRAY [16] OF picking_object_t
-	pp_array: ARRAY [16] OF picking_point_t
+	pp_array: ARRAY [16] OF picking_pose_t
 
 	-- storage of target selection
 	target_obj_id: STRING[32]
 	target_pp_id: STRING[32]
 
-	STATUS: INTEGER
-
-	-- file declarations must be global
-	-- socket file for REST calls
+	-- socket file for API queries
 	socket_file: FILE
-	-- output file for REST calls
+	-- output file for API queries
 	pipe_file: FILE
-	
-	-- log output
-	time_rtt: INTEGER
-	time_xml: INTEGER
-	time_total: INTEGER
-
-	i: INTEGER
-	n: INTEGER
 	
 	current_pos: XYZWPR
 	target_pos: XYZWPR
 	
-	-- variable declarations for API calls
-	pp_query_keys: ARRAY[8] OF STRING[32]
-	pp_query_values: ARRAY[8] OF STRING[32]
+	-- key value pairs for API calls
+	pp_query_keys: ARRAY[2] OF STRING[32]
+	pp_query_values: ARRAY[2] OF STRING[32]
+	
 	query: STRING[254]
 	query_success: BOOLEAN
 	
--- standalone imports
+	STATUS: INTEGER
+	n: INTEGER
+	
+-- dependencies (also transitive dependencies of included files)
 %INCLUDE ../util/generic_util
 %INCLUDE  ../util/socket_util
 %INCLUDE  ../util/file_util
-%INCLUDE  ../util/stopwatch_util
 %INCLUDE  ../xml/obj_parser	
 %INCLUDE  ../xml/pp_parser
 %INCLUDE ../core/core_move
-
--- requires socket_util, file_util
+%INCLUDE ../core/core_motion_start
+%INCLUDE ../core/core_motion_abort
 %INCLUDE  ../util/http_client_util
 
 BEGIN
 
--- set system vars for some reason
-$GROUP[1].$UTOOL = $MNUTOOL[1,1] --uTool 1
-$GROUP[1].$UFRAME = $MNUFRAME[1,1] --uFrame 1
-
--- start new motion TP task
-RUN_TASK( 'motion_backend', 1, FALSE, TRUE, 1 OR 2 OR 4, STATUS )
-DELAY(1000) -- yield to be able to restart TP routine
+-- disconnect if previous program termination was faulty
 DISCONNECT_FROM_SERVER(CONNECTION_TAG, socket_file)
 
 ---------------------------
 -- Fetch picking objects
 ---------------------------
 
-query = 'GET /fieldview/objects'
-
+-- use raw query
+query = 'GET /objects'
 MAKE_HTTP_REQUEST(query,CONNECTION_TAG, socket_file, pipe_file, pipe_path)
 
 n = PARSE_OBJ_LIST(pipe_file, pipe_path, obj_buffer, OBJ_BUFFER_NAME, PROGRAM_NAME, obj_array)
@@ -93,35 +85,21 @@ IF(n = 0) THEN
 	RETURN
 ENDIF
 
--- TODO arbitrarily choose last
-target_obj_id = obj_array[n].id
+-- choose first
+target_obj_id = obj_array[1].id
 
 ---------------------------
--- Fetch picking points
+-- Fetch picking pose
 ---------------------------
 
 pp_query_keys[1] = 'obj_id'
 pp_query_keys[2] = 'relative'
-pp_query_keys[3] = 'x'
-pp_query_keys[4] = 'y'
-pp_query_keys[5] = 'z'
-pp_query_keys[6] = 'w'
-pp_query_keys[7] = 'p'
-pp_query_keys[8] = 'r'
 
-current_pos = CURPOS(0,0)
 pp_query_values[1] = target_obj_id
 pp_query_values[2] = BOOL_TO_STR(relative_pos)
-pp_query_values[3] = REAL_TO_STR(current_pos.x)
-pp_query_values[4] = REAL_TO_STR(current_pos.y)
-pp_query_values[5] = REAL_TO_STR(current_pos.z)
-pp_query_values[6] = REAL_TO_STR(current_pos.w)
-pp_query_values[7] = REAL_TO_STR(current_pos.p)
-pp_query_values[8] = REAL_TO_STR(current_pos.r)
 
--- 'GET /picking-points?obj_id=0&relative=0&x=0&y=0&z=0&w=0&p=0&r=0'
-query = BUILD_PARAM_REQUEST('GET', 'fieldview/picking-points', pp_query_keys, pp_query_values)
-
+-- use query builder for convenience
+query = BUILD_PARAM_REQUEST('GET', 'picking-poses', pp_query_keys, pp_query_values)
 MAKE_HTTP_REQUEST(query,CONNECTION_TAG, socket_file, pipe_file, pipe_path)
 
 n = PARSE_PP_LIST(pipe_file, pipe_path, pp_buffer, PP_BUFFER_NAME, PROGRAM_NAME, pp_array)
@@ -130,51 +108,45 @@ IF(n = 0) THEN
 	RETURN
 ENDIF
 
--- arbitrarily choose last
-target_pp_id = pp_array[n].id
+-- choose first
+target_pp_id = pp_array[1].id
 
--- set target position
+-- set correct coordinate frame (for CURPOS routine)
+$GROUP[1].$UTOOL = $MNUTOOL[1,1] --uTool 1
+$GROUP[1].$UFRAME = $MNUFRAME[1,1] --uFrame 1
+
+-- start from current_pos
+current_pos = CURPOS(0,0)
 target_pos = current_pos
-target_pos.x =  pp_array[n].x
-target_pos.y =  pp_array[n].y
-target_pos.z = pp_array[n].z
-target_pos.w = pp_array[n].w
-target_pos.p = pp_array[n].p
-target_pos.r =  pp_array[n].r
+-- overwrite specific values
+target_pos.x =  pp_array[1].x
+target_pos.y =  pp_array[1].y
+target_pos.z = pp_array[1].z
+target_pos.w = pp_array[1].w
+target_pos.p = pp_array[1].p
+target_pos.r =  pp_array[1].r
 
--- set target position
-coords_6d[1] =  pp_array[n].x
-coords_6d[2] =  pp_array[n].y
-coords_6d[3] = pp_array[n].z
-coords_6d[4] = pp_array[n].w
-coords_6d[5] = pp_array[n].p
-coords_6d[6] =  pp_array[n].r
+-- start robot movement
+STATUS = CORE_MOTION_START(FALSE)
 
+---------------------------
+-- Track selected picking pose
+---------------------------
 REPEAT
-	---------------------------
-	-- Track selected picking point
-	---------------------------
-	
-	UPDATE_MOTION_BACKEND(target_pos, TRUE, TRUE)
+
+	-- update motion target
+	UPDATE_MOTION_BACKEND(target_pos, FALSE, FALSE)
+	-- query API twice per second
 	DELAY(500)
 
-	-- other query keys remain the same for this endpoint
-	pp_query_keys[1] = 'pp_id'
-
-	-- update query parameters
-	current_pos = CURPOS(0,0)
+	pp_query_keys[1] = 'pp_id' 
+	pp_query_keys[2] = 'relative'
+	
 	pp_query_values[1] = target_pp_id
 	pp_query_values[2] = BOOL_TO_STR(relative_pos)
-	pp_query_values[3] = REAL_TO_STR(current_pos.x)
-	pp_query_values[4] = REAL_TO_STR(current_pos.y)
-	pp_query_values[5] = REAL_TO_STR(current_pos.z)
-	pp_query_values[6] = REAL_TO_STR(current_pos.w)
-	pp_query_values[7] = REAL_TO_STR(current_pos.p)
-	pp_query_values[8] = REAL_TO_STR(current_pos.r)
 	
-	-- 'GET /picking-points?pp_id=0&relative=0&x=0&y=0&z=0&w=0&p=0&r=0'
-	query = BUILD_PARAM_REQUEST('GET', 'fieldview/track-picking-point', pp_query_keys, pp_query_values)
-	
+	-- use query builder for convenience
+	query = BUILD_PARAM_REQUEST('GET', 'track-picking-pose', pp_query_keys, pp_query_values)
 	MAKE_HTTP_REQUEST(query,CONNECTION_TAG, socket_file, pipe_file, pipe_path)
 	
 	query_success = PARSE_PP_SINGLE(pipe_file, pipe_path, pp_buffer, PP_BUFFER_NAME, PROGRAM_NAME)
@@ -183,7 +155,7 @@ REPEAT
 		RETURN
 	ENDIF
 
-	-- set target position
+	-- update target position variable
 	target_pos = current_pos
 	target_pos.x =  pp_buffer.x
 	target_pos.y =  pp_buffer.y
@@ -192,14 +164,10 @@ REPEAT
 	target_pos.p = pp_buffer.p
 	target_pos.r = pp_buffer.r
 	
-	-- set target position
-	coords_6d[1] =  pp_buffer.x
-	coords_6d[2] =  pp_buffer.y
-	coords_6d[3] =  pp_buffer.z
-	coords_6d[4] = pp_buffer.w
-	coords_6d[5] =  pp_buffer.p
-	coords_6d[6] =  pp_buffer.r
-	WRITE('track', CR)
+-- check for equality within 1mm and 0.1 degrees
 UNTIL (XYZWPR_ALMOST_EQUAL(target_pos, current_pos, 1, 0.1))
+
+--terminate robot movement
+STATUS = CORE_MOTION_ABORT
 
 END api_client

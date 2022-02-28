@@ -1,21 +1,21 @@
--- PARSE_PP_LIST						... Parse a list of objects of type picking_point_t from XML
+-- PARSE_PP_LIST						... Parse a list of objects of type picking_pose_t from XML
 --
 -- Routine Signature description:
 --
 -- xml_file: FILE								... File Variable
 --  xml_path: STRING						... File path, needed to open file
--- entry_buffer: picking_point_t				... Global buffer variable, needed for XML_SCAN subroutine
+-- entry_buffer: picking_pose_t				... Global buffer variable, needed for XML_SCAN subroutine
 -- buffer_name: STRING						... Name of global buffer variable in main program,  needed for XML_SCAN subroutine
 -- prog_name: STRING						... Name of main program,  needed for XML_SCAN subroutine
--- entry_array: ARRAY[*] OF picking_point_t	... Target array to parse file content into
+-- entry_array: ARRAY[*] OF picking_pose_t	... Target array to parse file content into
 -- RETURN: INTEGER						... Number of entries that were filled into target array
 ROUTINE  PARSE_PP_LIST(
 xml_file: FILE;
  xml_path: STRING;
-entry_buffer: picking_point_t;
+entry_buffer: picking_pose_t;
 buffer_name: STRING;
 prog_name: STRING;
-entry_array: ARRAY[*] OF picking_point_t) : INTEGER
+entry_array: ARRAY[*] OF picking_pose_t) : INTEGER
 
 CONST
 	-- preceding tag IDs are reserved for system
@@ -103,20 +103,20 @@ RETURN (next_index-1)
 END PARSE_PP_LIST
 
 
--- PARSE_PP_SINGLE						... Parse a single object of type picking_point_t from XML
+-- PARSE_PP_SINGLE						... Parse a single object of type picking_pose_t from XML
 --
 -- Routine Signature description:
 --
 -- xml_file: FILE								... File Variable
 --  xml_path: STRING						... File path, needed to open file
--- entry_buffer: picking_point_t				... Global buffer variable, needed for XML_SCAN subroutine
+-- entry_buffer: picking_pose_t				... Global buffer variable, needed for XML_SCAN subroutine
 -- buffer_name: STRING						... Name of global buffer variable in main program,  needed for XML_SCAN subroutine
 -- prog_name: STRING						... Name of main program,  needed for XML_SCAN subroutine
 -- RETURN: BOOLEAN						... Flag that is true if an entry was written into the buffer variable
 ROUTINE  PARSE_PP_SINGLE(
 xml_file: FILE;
  xml_path: STRING;
-entry_buffer: picking_point_t;
+entry_buffer: picking_pose_t;
 buffer_name: STRING;
 prog_name: STRING): BOOLEAN
 

@@ -33,6 +33,7 @@ ROUTINE BUILD_PARAM_REQUEST(request_type: STRING; endpoint: STRING; keys: ARRAY[
 VAR
 	request: STRING[254]
 	max_index: INTEGER
+	i: INTEGER
 
 BEGIN
 	request = request_type + ' /' + endpoint + '?'

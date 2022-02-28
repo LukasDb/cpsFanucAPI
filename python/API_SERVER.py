@@ -15,7 +15,7 @@ api = Api(app,
           default_label='An API to fetch FieldView Data from Karel programs',
           default_mediatype='application/xml',
           # prefix API calls
-          prefix='/fieldview',
+          prefix='',
           # keep doc on root url
           doc='/')
 
@@ -122,7 +122,7 @@ def calc_distance(*, current, target):
 
     # check if same dimensions
     if len(current) == 3 and len(target) == 3:
-        return np.linalg.norm(np.array(target)-np.array(current))
+        distance = np.linalg.norm(np.array(target)-np.array(current))
 
     return distance
 
@@ -143,7 +143,7 @@ class ObjectsEndpoint(Resource):
 
 # --------------------------------------------------------------------------
 
-@api.route('/picking-points')
+@api.route('/picking-poses')
 class PickingPointsEndpoint(Resource):
     parser = reqparse.RequestParser()
     parser.add_argument('obj_id', type=str, required=True, help='ID of object for which picking points should be provided')
@@ -205,7 +205,7 @@ class PickingPointsEndpoint(Resource):
 
 # --------------------------------------------------------------------------
 
-@api.route('/track-picking-point')
+@api.route('/track-picking-pose')
 class TrackPickingPointEndpoint(Resource):
     parser = reqparse.RequestParser()
     parser.add_argument('pp_id', type=str, required=True, help='ID of picking point that should be tracked')
