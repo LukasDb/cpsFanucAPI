@@ -14,6 +14,7 @@ BEGIN
 
 	OPEN FILE socket_file('RW', connection_tag)
 	STATUS = IO_STATUS(socket_file)
+	WRITE TPDISPLAY(STATUS)
 	
 END CONNECT_TO_SERVER
 
@@ -48,9 +49,15 @@ n_bytes: INTEGER
 STATUS: INTEGER
 
 BEGIN
-REPEAT
+
+n_bytes = 0
+
+WHILE (NOT (n_bytes > 0)) DO
 	BYTES_AHEAD(socket_file, n_bytes, STATUS)
+	WRITE TPDISPLAY('PLL')
+	WRITE TPDISPLAY(STATUS)
 	DELAY pollrate_ms -- sleep for x  ms
-UNTIL n_bytes > 0
+ENDWHILE 
+WRITE TPDISPLAY('REC', n_bytes)
 
 END AWAIT_SOCKET

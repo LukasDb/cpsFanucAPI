@@ -7,7 +7,7 @@ PROGRAM remotemotionstart
 VAR
 	response_file :FILE
 	STATUS: INTEGER
-	hs: STRING[127]
+	high_speed: STRING[127]
 	hs_flag: BOOLEAN
 	
 %INCLUDE ../util/generic_util
@@ -27,10 +27,10 @@ BEGIN
 	DELAY(1000) -- yield to be able to restart TP routine
 	-- start new motion TP task
 	
-	IF(UNINIT(hs)) THEN
+	IF(UNINIT(high_speed)) THEN
 		hs_flag = FALSE
 	ELSE
-		hs_flag = STR_TO_BOOL(hs)
+		hs_flag = STR_TO_BOOL(high_speed)
 	ENDIF
 	
 	SET_INT_REG(8, 0, STATUS)

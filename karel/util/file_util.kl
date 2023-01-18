@@ -11,6 +11,7 @@ n_bytes: INTEGER
 STATUS: INTEGER
 
 BEGIN
+string_buffer = ''
 BYTES_AHEAD(source, n_bytes, STATUS) -- initialize nBytes
 
 WHILE n_bytes > 0 DO
@@ -19,6 +20,7 @@ WHILE n_bytes > 0 DO
 	STATUS = IO_STATUS(source)
 
 	WRITE destination(string_buffer)
+	
 	
 	BYTES_AHEAD(source, n_bytes, STATUS) -- update minBytes
 	-- interpret scanning error as end of file (as source could be e.g. closed socket)

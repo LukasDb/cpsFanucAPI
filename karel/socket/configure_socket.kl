@@ -20,7 +20,7 @@ VAR
 BEGIN
 	-- Server IP that robot willl connect to as client
 	--ip = '10.162.12.207'
-	ip = '127.0.0.1'
+	ip = '10.162.12.191'
 	
 	-- Server Port
 	port_string = '5000'

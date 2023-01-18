@@ -16,7 +16,7 @@ CONST
 	PP_BUFFER_NAME = 'pp_buffer'
 	OBJ_BUFFER_NAME = 'obj_buffer'
 	
-	pipe_path = 'PIP:pipe.dt'
+	pipe_path = 'PIP:pipe.dat'
 	CONNECTION_TAG = 'C3:'
 	
 	relative_pos = FALSE
@@ -30,8 +30,8 @@ VAR
 	pp_buffer: picking_pose_t
 
 	-- array of fixed length for storage of API response data
-	obj_array: ARRAY [16] OF picking_object_t
-	pp_array: ARRAY [16] OF picking_pose_t
+	obj_array: ARRAY [32] OF picking_object_t
+	pp_array: ARRAY [32] OF picking_pose_t
 
 	-- storage of target selection
 	target_obj_id: STRING[32]
@@ -41,6 +41,8 @@ VAR
 	socket_file: FILE
 	-- output file for API queries
 	pipe_file: FILE
+	
+	log: FILE
 	
 	current_pos: XYZWPR
 	target_pos: XYZWPR
@@ -54,6 +56,10 @@ VAR
 	
 	STATUS: INTEGER
 	n: INTEGER
+	i: INTEGER
+	
+	time_net: INTEGER
+	time_xml: INTEGER
 	
 -- dependencies (also transitive dependencies of included files)
 %INCLUDE ../util/generic_util
@@ -65,11 +71,15 @@ VAR
 %INCLUDE ../core/core_motion_start
 %INCLUDE ../core/core_motion_abort
 %INCLUDE  ../util/http_client_util
+%INCLUDE ../util/log_util
+%INCLUDE ../util/stopwatch_util
 
 BEGIN
 
 -- disconnect if previous program termination was faulty
 DISCONNECT_FROM_SERVER(CONNECTION_TAG, socket_file)
+
+OPEN FILE log('RW', 'UD1:xml_timelog.csv')
 
 ---------------------------
 -- Fetch picking objects
@@ -126,48 +136,23 @@ target_pos.w = pp_array[1].w
 target_pos.p = pp_array[1].p
 target_pos.r =  pp_array[1].r
 
--- start robot movement
-STATUS = CORE_MOTION_START(FALSE)
-
+WRITE log('time_net;time_xml', CR)
 ---------------------------
 -- Track selected picking pose
 ---------------------------
+i = 0
 REPEAT
-
-	-- update motion target
-	UPDATE_MOTION_BACKEND(target_pos, FALSE, FALSE)
-	-- query API twice per second
-	DELAY(500)
-
-	pp_query_keys[1] = 'pp_id' 
-	pp_query_keys[2] = 'relative'
+	query = BUILD_PARAM_REQUEST('GET', 'picking-poses', pp_query_keys, pp_query_values)
 	
-	pp_query_values[1] = target_pp_id
-	pp_query_values[2] = BOOL_TO_STR(relative_pos)
-	
-	-- use query builder for convenience
-	query = BUILD_PARAM_REQUEST('GET', 'track-picking-pose', pp_query_keys, pp_query_values)
+	START_TIME(time_net)
 	MAKE_HTTP_REQUEST(query,CONNECTION_TAG, socket_file, pipe_file, pipe_path)
+	WRITE log(STOP_TIME(time_net), ';')
 	
-	query_success = PARSE_PP_SINGLE(pipe_file, pipe_path, pp_buffer, PP_BUFFER_NAME, PROGRAM_NAME)
-
-	IF(NOT query_success) THEN
-		RETURN
-	ENDIF
-
-	-- update target position variable
-	target_pos = current_pos
-	target_pos.x =  pp_buffer.x
-	target_pos.y =  pp_buffer.y
-	target_pos.z = pp_buffer.z
-	target_pos.w = pp_buffer.w
-	target_pos.p = pp_buffer.p
-	target_pos.r = pp_buffer.r
+	START_TIME(time_xml)
+	n = PARSE_PP_LIST(pipe_file, pipe_path, pp_buffer, PP_BUFFER_NAME, PROGRAM_NAME, pp_array)
+	WRITE log(STOP_TIME(time_xml), CR)
 	
--- check for equality within 1mm and 0.1 degrees
-UNTIL (XYZWPR_ALMOST_EQUAL(target_pos, current_pos, 1, 0.1))
-
---terminate robot movement
-STATUS = CORE_MOTION_ABORT
+	i = i + 1
+UNTIL (i = 100)
 
 END api_client

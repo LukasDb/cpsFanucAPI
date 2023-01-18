@@ -7,7 +7,7 @@ VAR
 	response_file :FILE
 	STATUS: INTEGER
 	
-	%INCLUDE ./core_position
+	%INCLUDE ../core/core_position
 
 BEGIN	
 	OPEN FILE response_file ('RW', 'RD:RESPONSE.HTM')

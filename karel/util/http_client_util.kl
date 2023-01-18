@@ -10,8 +10,14 @@
 ROUTINE MAKE_HTTP_REQUEST(call_string: STRING; server_tag : STRING; socket_file: FILE; output_file: FILE; output_path: STRING)
 BEGIN
 	CONNECT_TO_SERVER(server_tag, socket_file) -- establish connection
-	WRITE socket_file(call_string, CR, CR) -- write and flush
+	WRITE socket_file(call_string) -- write and flush
+	WRITE socket_file(CR, CR, CR)
+	CLOSE FILE socket_file
+	SET_FILE_ATR(socket_file, ATR_READAHD, 1)
+	OPEN FILE socket_file('RO', connection_tag)
 	OPEN FILE output_file('RW', output_path)
+	WRITE TPDISPLAY(CR, 'SOCKR', IO_STATUS(socket_file))
+	DELAY(1)
 	
 	AWAIT_SOCKET(socket_file, 1) -- active polling
 	FILE_COPY(socket_file, output_file) -- socketFile -> outputFile
