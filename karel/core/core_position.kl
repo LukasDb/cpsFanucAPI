@@ -2,19 +2,33 @@ ROUTINE CORE_POSITION(response_file: FILE)
 
 VAR
 	current_pos: XYZWPR
+	jnt: JOINTPOS
+	jnt_status: INTEGER
+	jnt_array: ARRAY[6] OF REAL
 
 BEGIN
 	$GROUP[1].$UTOOL = $MNUTOOL[1,1] --uTool 1
 	$GROUP[1].$UFRAME = $MNUFRAME[1,1] --uFrame 1
 	current_pos = CURPOS(0,0)
-	
-	WRITE response_file (  '{"result":"success"', 
-				', "x":', current_pos.x,
-				', "y":', current_pos.y,
-				', "z":', current_pos.z,
-				', "w":', current_pos.w,
-				', "p":', current_pos.p,
-				', "r":', current_pos.r,
-				'}')
+	jnt = CURJPOS(0,0);
+	CNV_JPOS_REL(jnt, jnt_array, jnt_status)
+	IF (jnt_STATUS <> 0) THEN
+		WRITE response_file ( '{"result":"failed", "reason":','Could not retrieve joint positions','}') 
+	ELSE
+		WRITE response_file (  '{"result":"success"', 
+					', "x":', current_pos.x,
+					', "y":', current_pos.y,
+					', "z":', current_pos.z,
+					', "w":', current_pos.w,
+					', "p":', current_pos.p,
+					', "r":', current_pos.r,
+					', "j1":', jnt_array[1],
+					', "j2":', jnt_array[2],
+					', "j3":', jnt_array[3],
+					', "j4":', jnt_array[4],
+					', "j5":', jnt_array[5],
+					', "j6":', jnt_array[6],
+					'}')
+	ENDIF
 				
 END CORE_POSITION

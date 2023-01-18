@@ -36,6 +36,9 @@ response_file: FILE)
 VAR
 	target_pos: XYZWPR
 	current_pos: XYZWPR
+	jnt: JOINTPOS
+	jnt_status: INTEGER
+	jnt_array: ARRAY[6] OF REAL
 	temp_int: INTEGER
 	temp_real: REAL
 
@@ -43,6 +46,8 @@ BEGIN
 	$GROUP[1].$UTOOL = $MNUTOOL[1,1] --uTool 1
 	$GROUP[1].$UFRAME = $MNUFRAME[1,1] --uFrame 1
 	current_pos = CURPOS(0,0);
+	jnt = CURJPOS(0,0);
+	CNV_JPOS_REL(jnt, jnt_array, jnt_status)
 	
 	-- start from old position instance
 	target_pos = current_pos
@@ -56,7 +61,7 @@ BEGIN
 	
 	UPDATE_MOTION_BACKEND(target_pos, linear_path, interrupt_current_motion)
 
-	IF (STATUS <> 0) THEN
+	IF (STATUS <> 0) OR (jnt_status <> 0) THEN
 		WRITE response_file ( '{"result":"failed", "reason":"Could not update target position register"}')
 	ELSE
 		GET_REG(8, FALSE, temp_int, temp_real, STATUS)
@@ -67,6 +72,12 @@ BEGIN
 				', "w":', current_pos.w,
 				', "p":', current_pos.p,
 				', "r":', current_pos.r,
+				', "j1":', jnt_array[1],
+				', "j2":', jnt_array[2],
+				', "j3":', jnt_array[3],
+				', "j4":', jnt_array[4],
+				', "j5":', jnt_array[5],
+				', "j6":', jnt_array[6],
 				', "count":', temp_int,
 				'}')
 	ENDIF
